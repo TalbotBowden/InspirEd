@@ -53,29 +53,22 @@ export default function PlannerScreen() {
     });
   };
 
-  if (plannerQuestions.length === 0 && !newQuestion) {
-    return (
-      <ScreenScrollView>
-        <View style={styles.emptyContainer}>
-          <Image
-            source={require("@/assets/illustrations/empty-planner.png")}
-            style={styles.emptyImage}
-            resizeMode="contain"
-          />
-          <ThemedText style={styles.emptyTitle}>Plan Your Next Visit</ThemedText>
-          <ThemedText style={[styles.emptyText, { color: theme.textSecondary }]}>
-            Add questions you want to ask your doctor or let AI suggest questions based on your visit history.
-          </ThemedText>
-          {visits.length > 0 && (
-            <Button onPress={handleSuggestQuestions} disabled={isLoadingSuggestions}>
-              <Feather name="zap" size={20} color="white" style={{ marginRight: Spacing.sm }} />
-              {isLoadingSuggestions ? "Loading..." : "Suggest Questions"}
-            </Button>
-          )}
-        </View>
-      </ScreenScrollView>
-    );
-  }
+  const commonQuestions = [
+    "What does this diagnosis mean for my child's future?",
+    "Are there any side effects I should watch for?",
+    "What are the treatment options available?",
+    "How can I help my child at home?",
+    "When should I call if symptoms worsen?",
+  ];
+
+  const handleAddCommonQuestion = (text: string) => {
+    const question: Question = {
+      id: Date.now().toString(),
+      text,
+      checked: false,
+    };
+    addPlannerQuestion(question);
+  };
 
   return (
     <ScreenScrollView>
@@ -102,17 +95,38 @@ export default function PlannerScreen() {
           </Button>
         )}
 
-        <View style={styles.questionsSection}>
-          <ThemedText style={styles.sectionTitle}>Questions to Ask</ThemedText>
-          {plannerQuestions.map((question) => (
-            <QuestionItem
-              key={question.id}
-              question={question}
-              onToggle={handleToggle}
-              onDelete={handleDelete}
-            />
-          ))}
-        </View>
+        {plannerQuestions.length === 0 && (
+          <View style={styles.starterSection}>
+            <ThemedText style={styles.starterTitle}>Common Questions to Get Started</ThemedText>
+            <ThemedText style={[styles.starterDescription, { color: theme.textSecondary }]}>
+              Tap any question below to add it to your list:
+            </ThemedText>
+            {commonQuestions.map((text, index) => (
+              <Pressable
+                key={index}
+                style={[styles.starterCard, { backgroundColor: theme.backgroundSecondary }]}
+                onPress={() => handleAddCommonQuestion(text)}
+              >
+                <ThemedText style={styles.starterText}>{text}</ThemedText>
+                <Feather name="plus-circle" size={20} color={theme.primary} />
+              </Pressable>
+            ))}
+          </View>
+        )}
+
+        {plannerQuestions.length > 0 && (
+          <View style={styles.questionsSection}>
+            <ThemedText style={styles.sectionTitle}>Questions to Ask</ThemedText>
+            {plannerQuestions.map((question) => (
+              <QuestionItem
+                key={question.id}
+                question={question}
+                onToggle={handleToggle}
+                onDelete={handleDelete}
+              />
+            ))}
+          </View>
+        )}
       </View>
     </ScreenScrollView>
   );
@@ -247,5 +261,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
     lineHeight: 24,
+  },
+  starterSection: {
+    gap: Spacing.md,
+    marginTop: Spacing.md,
+  },
+  starterTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  starterDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: Spacing.xs,
+  },
+  starterCard: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: Spacing.md,
+  },
+  starterText: {
+    flex: 1,
+    fontSize: 15,
+    lineHeight: 20,
   },
 });
