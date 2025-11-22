@@ -12,18 +12,6 @@ if (!CLOUD_FUNCTION_BASE_URL) {
   );
 }
 
-function getReadingLevelGuidance(readingLevel: number): string {
-  if (readingLevel <= 6) {
-    return "Use very simple words and short sentences (under 10 words). Explain everything like you're talking to a 6th grader.";
-  } else if (readingLevel <= 8) {
-    return "Use clear, straightforward language. Keep sentences under 15 words. Avoid complex medical jargon.";
-  } else if (readingLevel <= 10) {
-    return "Use moderate vocabulary appropriate for a high school student. Technical terms are okay if explained simply.";
-  } else {
-    return "Use standard medical terminology with clear explanations. Write at a college reading level.";
-  }
-}
-
 export async function generateVisitSummary(
   audioUri: string,
   readingLevel: number

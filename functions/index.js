@@ -1,10 +1,38 @@
 const { onRequest } = require("firebase-functions/v2/https");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const admin = require("firebase-admin");
+const { setGlobalOptions } = require("firebase-functions/v2");
 
 admin.initializeApp();
 
+setGlobalOptions({
+  region: "us-central1",
+});
+
 const genAI = new GoogleGenerativeAI(process.env.STUDIO_GEMINI_KEY);
+
+const MAX_REQUEST_SIZE = 50 * 1024 * 1024;
+
+function validateRequestSize(req, res) {
+  const contentLength = parseInt(req.get("content-length") || "0");
+  if (contentLength > MAX_REQUEST_SIZE) {
+    res.status(413).json({
+      error: "REQUEST_TOO_LARGE",
+      message: "Request body exceeds 50MB limit",
+    });
+    return false;
+  }
+  return true;
+}
+
+function logError(functionName, error, correlationId) {
+  console.error({
+    function: functionName,
+    correlationId,
+    error: error.message,
+    stack: error.stack,
+  });
+}
 
 function getReadingLevelGuidance(readingLevel) {
   if (readingLevel <= 6) {
@@ -20,14 +48,23 @@ function getReadingLevelGuidance(readingLevel) {
 
 exports.transcribeAndSummarize = onRequest(
   {
-    cors: true,
+    cors: ["https://*.replit.dev", "https://*.replit.app"],
     maxInstances: 10,
     timeoutSeconds: 300,
     memory: "512MiB",
   },
   async (req, res) => {
+    const correlationId = `txn-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
     if (req.method !== "POST") {
-      return res.status(405).json({ error: "Method not allowed" });
+      return res.status(405).json({
+        error: "METHOD_NOT_ALLOWED",
+        message: "Only POST requests are allowed",
+      });
+    }
+
+    if (!validateRequestSize(req, res)) {
+      return;
     }
 
     try {
@@ -35,7 +72,17 @@ exports.transcribeAndSummarize = onRequest(
 
       if (!audioData || !mimeType || readingLevel === undefined) {
         return res.status(400).json({
-          error: "Missing required fields: audioData, mimeType, or readingLevel",
+          error: "MISSING_FIELDS",
+          message: "Missing required fields: audioData, mimeType, or readingLevel",
+          correlationId,
+        });
+      }
+
+      if (audioData.length > 50 * 1024 * 1024) {
+        return res.status(413).json({
+          error: "AUDIO_TOO_LARGE",
+          message: "Audio data exceeds 50MB limit",
+          correlationId,
         });
       }
 
@@ -95,12 +142,31 @@ Important:
         diagnoses: parsed.diagnoses || [],
         actions: parsed.actions || [],
         medicalTerms: parsed.medicalTerms || [],
+        correlationId,
       });
     } catch (error) {
-      console.error("Error in transcribeAndSummarize:", error);
+      logError("transcribeAndSummarize", error, correlationId);
+
+      if (error.message.includes("quota")) {
+        return res.status(429).json({
+          error: "QUOTA_EXCEEDED",
+          message: "API quota exceeded. Please try again later.",
+          correlationId,
+        });
+      }
+
+      if (error.message.includes("parse")) {
+        return res.status(422).json({
+          error: "INVALID_AUDIO",
+          message: "Could not process audio file. Please check the format.",
+          correlationId,
+        });
+      }
+
       return res.status(500).json({
-        error: "Failed to process audio",
-        details: error.message,
+        error: "PROCESSING_FAILED",
+        message: "Failed to process audio. Please try again.",
+        correlationId,
       });
     }
   }
@@ -108,13 +174,23 @@ Important:
 
 exports.answerQuestion = onRequest(
   {
-    cors: true,
+    cors: ["https://*.replit.dev", "https://*.replit.app"],
     maxInstances: 10,
     timeoutSeconds: 60,
+    memory: "256MiB",
   },
   async (req, res) => {
+    const correlationId = `aq-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
     if (req.method !== "POST") {
-      return res.status(405).json({ error: "Method not allowed" });
+      return res.status(405).json({
+        error: "METHOD_NOT_ALLOWED",
+        message: "Only POST requests are allowed",
+      });
+    }
+
+    if (!validateRequestSize(req, res)) {
+      return;
     }
 
     try {
@@ -122,7 +198,9 @@ exports.answerQuestion = onRequest(
 
       if (!question || !visitContext || readingLevel === undefined) {
         return res.status(400).json({
-          error: "Missing required fields: question, visitContext, or readingLevel",
+          error: "MISSING_FIELDS",
+          message: "Missing required fields: question, visitContext, or readingLevel",
+          correlationId,
         });
       }
 
@@ -143,12 +221,22 @@ Please answer the question based on the visit notes above. If the information is
       const result = await model.generateContent(prompt);
       const answer = result.response.text();
 
-      return res.json({ answer });
+      return res.json({ answer, correlationId });
     } catch (error) {
-      console.error("Error in answerQuestion:", error);
+      logError("answerQuestion", error, correlationId);
+
+      if (error.message.includes("quota")) {
+        return res.status(429).json({
+          error: "QUOTA_EXCEEDED",
+          message: "API quota exceeded. Please try again later.",
+          correlationId,
+        });
+      }
+
       return res.status(500).json({
-        error: "Failed to answer question",
-        details: error.message,
+        error: "ANSWER_FAILED",
+        message: "Failed to answer question. Please try again.",
+        correlationId,
       });
     }
   }
@@ -156,13 +244,23 @@ Please answer the question based on the visit notes above. If the information is
 
 exports.suggestQuestions = onRequest(
   {
-    cors: true,
+    cors: ["https://*.replit.dev", "https://*.replit.app"],
     maxInstances: 10,
     timeoutSeconds: 60,
+    memory: "256MiB",
   },
   async (req, res) => {
+    const correlationId = `sq-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
     if (req.method !== "POST") {
-      return res.status(405).json({ error: "Method not allowed" });
+      return res.status(405).json({
+        error: "METHOD_NOT_ALLOWED",
+        message: "Only POST requests are allowed",
+      });
+    }
+
+    if (!validateRequestSize(req, res)) {
+      return;
     }
 
     try {
@@ -170,7 +268,9 @@ exports.suggestQuestions = onRequest(
 
       if (!visitHistory || !Array.isArray(visitHistory)) {
         return res.status(400).json({
-          error: "Missing or invalid visitHistory array",
+          error: "MISSING_FIELDS",
+          message: "Missing or invalid visitHistory array",
+          correlationId,
         });
       }
 
@@ -208,12 +308,22 @@ Return ONLY a JSON array of question strings, like:
       }
 
       const questions = JSON.parse(jsonMatch[0]);
-      return res.json({ questions });
+      return res.json({ questions, correlationId });
     } catch (error) {
-      console.error("Error in suggestQuestions:", error);
+      logError("suggestQuestions", error, correlationId);
+
+      if (error.message.includes("quota")) {
+        return res.status(429).json({
+          error: "QUOTA_EXCEEDED",
+          message: "API quota exceeded. Please try again later.",
+          correlationId,
+        });
+      }
+
       return res.status(500).json({
-        error: "Failed to suggest questions",
-        details: error.message,
+        error: "SUGGESTIONS_FAILED",
+        message: "Failed to suggest questions. Please try again.",
+        correlationId,
       });
     }
   }
