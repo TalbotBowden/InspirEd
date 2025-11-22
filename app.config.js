@@ -46,7 +46,7 @@ module.exports = {
       reactCompiler: true,
     },
     extra: {
-      STUDIO_GEMINI_KEY: process.env.STUDIO_GEMINI_KEY,
+      CLOUD_FUNCTION_BASE_URL: process.env.EXPO_PUBLIC_CLOUD_FUNCTION_BASE_URL,
     },
   },
 };

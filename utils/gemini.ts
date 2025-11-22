@@ -1,19 +1,16 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import * as FileSystem from "expo-file-system";
 import Constants from "expo-constants";
 
-const API_KEY =
-  Constants.expoConfig?.extra?.STUDIO_GEMINI_KEY ||
-  (typeof process !== "undefined" && process.env?.STUDIO_GEMINI_KEY) ||
+const CLOUD_FUNCTION_BASE_URL =
+  Constants.expoConfig?.extra?.CLOUD_FUNCTION_BASE_URL ||
+  (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_CLOUD_FUNCTION_BASE_URL) ||
   "";
 
-if (!API_KEY) {
-  console.warn("STUDIO_GEMINI_KEY not found. AI features will not work.");
-  console.log("Constants.expoConfig?.extra:", Constants.expoConfig?.extra);
-  console.log("process.env.STUDIO_GEMINI_KEY:", typeof process !== "undefined" ? process.env?.STUDIO_GEMINI_KEY : "process not defined");
+if (!CLOUD_FUNCTION_BASE_URL) {
+  console.warn(
+    "CLOUD_FUNCTION_BASE_URL not found. AI features will not work. Please deploy Cloud Functions and set EXPO_PUBLIC_CLOUD_FUNCTION_BASE_URL."
+  );
 }
-
-const genAI = new GoogleGenerativeAI(API_KEY);
 
 function getReadingLevelGuidance(readingLevel: number): string {
   if (readingLevel <= 6) {
@@ -32,7 +29,9 @@ export async function generateVisitSummary(
   readingLevel: number
 ): Promise<any> {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    if (!CLOUD_FUNCTION_BASE_URL) {
+      throw new Error("Cloud Function URL not configured");
+    }
 
     const audioData = await FileSystem.readAsStringAsync(audioUri, {
       encoding: "base64",
@@ -42,68 +41,40 @@ export async function generateVisitSummary(
       ? "audio/mp4"
       : "audio/mpeg";
 
-    const readingGuidance = getReadingLevelGuidance(readingLevel);
-
-    const prompt = `You are a medical visit assistant helping parents of children with chronic pulmonary conditions.
-
-First, transcribe this audio recording of a doctor's visit. Then create a helpful summary.
-
-${readingGuidance}
-
-Please provide your response in the following JSON format:
-{
-  "transcript": "full transcription here",
-  "summary": "2-3 sentence overview of the visit",
-  "keyPoints": ["point 1", "point 2", "point 3"],
-  "diagnoses": ["diagnosis 1", "diagnosis 2"],
-  "actions": ["action 1", "action 2"],
-  "medicalTerms": [
-    {
-      "term": "Medical Term",
-      "explanation": "Simple explanation adapted to reading level"
-    }
-  ]
-}
-
-Important:
-- Write the summary and explanations at the specified reading level
-- Focus on what matters to parents: what was said, what it means, what to do
-- Explain medical terms in plain language
-- Be supportive and clear`;
-
-    const result = await model.generateContent([
-      {
-        inlineData: {
-          data: audioData,
-          mimeType: mimeType,
-        },
+    const response = await fetch(`${CLOUD_FUNCTION_BASE_URL}/transcribeAndSummarize`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-      prompt,
-    ]);
+      body: JSON.stringify({
+        audioData,
+        mimeType,
+        readingLevel,
+      }),
+    });
 
-    const response = result.response.text();
-    
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error("Could not parse AI response");
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to process audio");
     }
 
-    const parsed = JSON.parse(jsonMatch[0]);
+    const result = await response.json();
 
     return {
-      transcript: parsed.transcript || "",
-      summary: parsed.summary || "Visit summary not available",
-      keyPoints: parsed.keyPoints || [],
-      diagnoses: parsed.diagnoses || [],
-      actions: parsed.actions || [],
-      medicalTerms: parsed.medicalTerms || [],
+      transcript: result.transcript || "",
+      summary: result.summary || "Visit summary not available",
+      keyPoints: result.keyPoints || [],
+      diagnoses: result.diagnoses || [],
+      actions: result.actions || [],
+      medicalTerms: result.medicalTerms || [],
     };
   } catch (error) {
     console.error("Error generating visit summary:", error);
-    
+
     return {
       transcript: "",
-      summary: "We had trouble processing this recording. Please try again or contact support if the problem continues.",
+      summary:
+        "We had trouble processing this recording. Please try again or contact support if the problem continues.",
       keyPoints: ["Unable to process audio at this time"],
       diagnoses: [],
       actions: ["Try recording again with clear audio"],
@@ -118,23 +89,29 @@ export async function askQuestionAboutVisit(
   readingLevel: number
 ): Promise<string> {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    if (!CLOUD_FUNCTION_BASE_URL) {
+      throw new Error("Cloud Function URL not configured");
+    }
 
-    const readingGuidance = getReadingLevelGuidance(readingLevel);
+    const response = await fetch(`${CLOUD_FUNCTION_BASE_URL}/answerQuestion`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        question,
+        visitContext,
+        readingLevel,
+      }),
+    });
 
-    const prompt = `You are a medical assistant helping parents understand their child's doctor visit.
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to answer question");
+    }
 
-Visit context:
-${visitContext}
-
-Parent's question: ${question}
-
-${readingGuidance}
-
-Please answer the question based on the visit notes above. If the information isn't in the visit notes, say so and suggest they ask their doctor. Be supportive, clear, and helpful.`;
-
-    const result = await model.generateContent(prompt);
-    return result.response.text();
+    const result = await response.json();
+    return result.answer || "I couldn't generate an answer. Please try again.";
   } catch (error) {
     console.error("Error answering question:", error);
     return "I'm having trouble answering that right now. Please try again or ask your doctor directly.";
@@ -154,30 +131,27 @@ export async function suggestPlannerQuestions(
       ];
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
-
-    const recentVisits = visitHistory
-      .slice(0, 3)
-      .map((v) => v.summary || "No summary")
-      .join("\n\n");
-
-    const prompt = `Based on these recent doctor visits for a child with a chronic pulmonary condition, suggest 4-5 important questions the parent should ask at their next visit.
-
-Recent visits:
-${recentVisits}
-
-Return ONLY a JSON array of question strings, like:
-["Question 1?", "Question 2?", "Question 3?"]`;
-
-    const result = await model.generateContent(prompt);
-    const response = result.response.text();
-
-    const jsonMatch = response.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      throw new Error("Could not parse questions");
+    if (!CLOUD_FUNCTION_BASE_URL) {
+      throw new Error("Cloud Function URL not configured");
     }
 
-    return JSON.parse(jsonMatch[0]);
+    const response = await fetch(`${CLOUD_FUNCTION_BASE_URL}/suggestQuestions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        visitHistory,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to suggest questions");
+    }
+
+    const result = await response.json();
+    return result.questions || [];
   } catch (error) {
     console.error("Error suggesting questions:", error);
     return [
