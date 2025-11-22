@@ -35,6 +35,18 @@ export type PDFSource = {
   status: "processing" | "ready";
 };
 
+export type LearningModule = {
+  id: string;
+  title: string;
+  category: string;
+  description: string;
+  duration: string;
+  difficulty: "Beginner" | "Intermediate" | "Advanced";
+  progress: number;
+  completed: boolean;
+  topics: string[];
+};
+
 type AppContextType = {
   userName: string;
   setUserName: (name: string) => void;
@@ -60,6 +72,11 @@ type AppContextType = {
   pdfSources: PDFSource[];
   addPDFSource: (source: PDFSource) => void;
   deletePDFSource: (id: string) => void;
+  learningModules: LearningModule[];
+  updateModuleProgress: (id: string, progress: number) => void;
+  completeModule: (id: string) => void;
+  educationChatMessages: Message[];
+  addEducationChatMessage: (message: Message) => void;
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -75,6 +92,75 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [chatMessages, setChatMessages] = useState<{ [visitId: string]: Message[] }>({});
   const [plannerQuestions, setPlannerQuestions] = useState<Question[]>([]);
   const [pdfSources, setPDFSources] = useState<PDFSource[]>([]);
+  const [educationChatMessages, setEducationChatMessages] = useState<Message[]>([]);
+  const [learningModules, setLearningModules] = useState<LearningModule[]>([
+    {
+      id: "1",
+      title: "Understanding Pulmonary Function Tests",
+      category: "Diagnostics",
+      description: "Learn how to read and understand your child's lung function test results.",
+      duration: "15 min",
+      difficulty: "Beginner",
+      progress: 0,
+      completed: false,
+      topics: ["PFT", "Spirometry", "Test Results", "Normal Ranges"],
+    },
+    {
+      id: "2",
+      title: "Managing Daily Medications",
+      category: "Treatment",
+      description: "Best practices for administering respiratory medications to children.",
+      duration: "20 min",
+      difficulty: "Beginner",
+      progress: 0,
+      completed: false,
+      topics: ["Inhalers", "Nebulizers", "Medication Schedule", "Side Effects"],
+    },
+    {
+      id: "3",
+      title: "Recognizing Warning Signs",
+      category: "Emergency",
+      description: "Know when to call the doctor and when to seek emergency care.",
+      duration: "12 min",
+      difficulty: "Beginner",
+      progress: 0,
+      completed: false,
+      topics: ["Symptoms", "Emergency Signs", "When to Call", "Action Plan"],
+    },
+    {
+      id: "4",
+      title: "Nutrition for Lung Health",
+      category: "Lifestyle",
+      description: "Foods and nutrients that support respiratory health in children.",
+      duration: "18 min",
+      difficulty: "Intermediate",
+      progress: 0,
+      completed: false,
+      topics: ["Nutrition", "Inflammation", "Immune System", "Meal Planning"],
+    },
+    {
+      id: "5",
+      title: "Physical Activity Guidelines",
+      category: "Lifestyle",
+      description: "Safe exercise and activity recommendations for children with pulmonary conditions.",
+      duration: "15 min",
+      difficulty: "Intermediate",
+      progress: 0,
+      completed: false,
+      topics: ["Exercise", "Sports", "Safety", "Benefits"],
+    },
+    {
+      id: "6",
+      title: "Advanced Treatment Options",
+      category: "Treatment",
+      description: "Explore newer therapies and clinical trial opportunities.",
+      duration: "25 min",
+      difficulty: "Advanced",
+      progress: 0,
+      completed: false,
+      topics: ["Clinical Trials", "New Therapies", "Research", "Specialists"],
+    },
+  ]);
 
   const addVisit = (visit: Visit) => {
     setVisits((prev) => [visit, ...prev]);
@@ -115,6 +201,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPDFSources((prev) => prev.filter((s) => s.id !== id));
   };
 
+  const updateModuleProgress = (id: string, progress: number) => {
+    setLearningModules((prev) =>
+      prev.map((module) =>
+        module.id === id ? { ...module, progress, completed: progress >= 100 } : module
+      )
+    );
+  };
+
+  const completeModule = (id: string) => {
+    setLearningModules((prev) =>
+      prev.map((module) => (module.id === id ? { ...module, progress: 100, completed: true } : module))
+    );
+  };
+
+  const addEducationChatMessage = (message: Message) => {
+    setEducationChatMessages((prev) => [...prev, message]);
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -142,6 +246,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         pdfSources,
         addPDFSource,
         deletePDFSource,
+        learningModules,
+        updateModuleProgress,
+        completeModule,
+        educationChatMessages,
+        addEducationChatMessage,
       }}
     >
       {children}

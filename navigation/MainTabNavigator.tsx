@@ -6,6 +6,7 @@ import { Platform, StyleSheet } from "react-native";
 import HomeStackNavigator from "@/navigation/HomeStackNavigator";
 import HistoryStackNavigator from "@/navigation/HistoryStackNavigator";
 import PlannerStackNavigator from "@/navigation/PlannerStackNavigator";
+import EducationStackNavigator from "@/navigation/EducationStackNavigator";
 import ProfileStackNavigator from "@/navigation/ProfileStackNavigator";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -13,6 +14,7 @@ export type MainTabParamList = {
   HomeTab: undefined;
   HistoryTab: undefined;
   PlannerTab: undefined;
+  EducationTab: undefined;
   ProfileTab: undefined;
 };
 
@@ -74,6 +76,16 @@ export default function MainTabNavigator() {
           title: "Planner",
           tabBarIcon: ({ color, size }) => (
             <Feather name="calendar" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="EducationTab"
+        component={EducationStackNavigator}
+        options={{
+          title: "Learn",
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="book-open" size={size} color={color} />
           ),
         }}
       />
