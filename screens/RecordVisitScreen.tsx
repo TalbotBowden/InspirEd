@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { View, StyleSheet, Pressable, TextInput, Alert } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -16,6 +16,22 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { generateVisitSummary } from "@/utils/openai";
+import { Audio } from "expo-av";
+
+/*
+ * NOTE: Using expo-av for audio recording despite its deprecation in SDK 54.
+ * 
+ * Rationale:
+ * - expo-audio (the replacement) does not support pause/resume functionality as of SDK 54
+ * - The recording pause/resume feature is critical for parents during doctor visits
+ *   (they may need to pause during private conversations)
+ * - expo-av provides pauseAsync()/startAsync() methods that meet requirements
+ * 
+ * Future migration:
+ * - Monitor expo-audio for pause/resume support in future SDK releases
+ * - Consider alternative solutions (e.g., segment stitching, different audio library)
+ * - Migrate away from expo-av before it's fully removed from Expo
+ */
 
 export default function RecordVisitScreen() {
   const { theme } = useTheme();
@@ -27,8 +43,45 @@ export default function RecordVisitScreen() {
   const [isPaused, setIsPaused] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [doctorName, setDoctorName] = useState("");
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [permissionGranted, setPermissionGranted] = useState(false);
   
+  const recordingRef = useRef<Audio.Recording | null>(null);
   const pulse = useSharedValue(1);
+
+  useEffect(() => {
+    recordingRef.current = recording;
+  }, [recording]);
+
+  useEffect(() => {
+    requestPermissions();
+    return () => {
+      if (recordingRef.current) {
+        recordingRef.current.stopAndUnloadAsync().catch(console.error);
+      }
+    };
+  }, []);
+
+  const requestPermissions = async () => {
+    try {
+      const { granted } = await Audio.requestPermissionsAsync();
+      setPermissionGranted(granted);
+      if (!granted) {
+        Alert.alert(
+          "Permission Required",
+          "InspirEd needs microphone access to record doctor visits. Please enable it in your device settings.",
+          [{ text: "OK" }]
+        );
+      } else {
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: true,
+          playsInSilentModeIOS: true,
+        });
+      }
+    } catch (error) {
+      console.error("Permission error:", error);
+    }
+  };
 
   useEffect(() => {
     if (isRecording && !isPaused) {
@@ -63,7 +116,7 @@ export default function RecordVisitScreen() {
     return `${mins.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
-  const handleCancel = () => {
+  const handleCancel = async () => {
     if (isRecording || seconds > 0) {
       Alert.alert(
         "Cancel Recording?",
@@ -73,7 +126,15 @@ export default function RecordVisitScreen() {
           {
             text: "Cancel",
             style: "destructive",
-            onPress: () => navigation.goBack(),
+            onPress: async () => {
+              if (recording) {
+                await recording.stopAndUnloadAsync();
+                setRecording(null);
+              }
+              setIsRecording(false);
+              setIsPaused(false);
+              navigation.goBack();
+            },
           },
         ]
       );
@@ -82,41 +143,92 @@ export default function RecordVisitScreen() {
     }
   };
 
-  const handleRecord = () => {
-    setIsRecording(true);
-    setIsPaused(false);
+  const handleRecord = async () => {
+    if (!permissionGranted) {
+      await requestPermissions();
+      return;
+    }
+    
+    try {
+      const { recording: newRecording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      setRecording(newRecording);
+      setIsRecording(true);
+      setIsPaused(false);
+    } catch (error) {
+      console.error("Failed to start recording:", error);
+      Alert.alert("Recording Error", "Could not start recording. Please try again.");
+    }
   };
 
-  const handlePause = () => {
-    setIsPaused(!isPaused);
+  const handlePause = async () => {
+    if (!recording) return;
+    
+    try {
+      if (isPaused) {
+        await recording.startAsync();
+        setIsPaused(false);
+      } else {
+        await recording.pauseAsync();
+        setIsPaused(true);
+      }
+    } catch (error) {
+      console.error("Failed to pause/resume recording:", error);
+      Alert.alert("Recording Error", "Could not pause/resume recording.");
+    }
   };
 
   const handleStop = async () => {
-    const visitId = Date.now().toString();
-    const visit = {
-      id: visitId,
-      date: new Date(),
-      doctorName: doctorName || "Not specified",
-      duration: seconds,
-      audioUri: `mock://recording-${visitId}.m4a`,
-      summary: null,
-      keyPoints: [],
-      diagnoses: [],
-      actions: [],
-      medicalTerms: [],
-      isProcessing: true,
-    };
+    if (!recording) return;
     
-    addVisit(visit);
-    navigation.goBack();
-    
-    setTimeout(async () => {
-      const summary = await generateVisitSummary("Mock transcript", readingLevel);
-      updateVisit(visitId, {
-        ...summary,
-        isProcessing: false,
-      });
-    }, 3000);
+    try {
+      await recording.stopAndUnloadAsync();
+      const audioUri = recording.getURI();
+      
+      if (!audioUri) {
+        Alert.alert("Recording Error", "No audio was recorded.");
+        setRecording(null);
+        setIsRecording(false);
+        setIsPaused(false);
+        return;
+      }
+
+      const visitId = Date.now().toString();
+      const visit = {
+        id: visitId,
+        date: new Date(),
+        doctorName: doctorName || "Not specified",
+        duration: seconds,
+        audioUri: audioUri,
+        summary: null,
+        keyPoints: [],
+        diagnoses: [],
+        actions: [],
+        medicalTerms: [],
+        isProcessing: true,
+      };
+      
+      addVisit(visit);
+      setRecording(null);
+      setIsRecording(false);
+      setIsPaused(false);
+      navigation.goBack();
+      
+      setTimeout(async () => {
+        const summary = await generateVisitSummary("Mock transcript", readingLevel);
+        updateVisit(visitId, {
+          ...summary,
+          isProcessing: false,
+        });
+      }, 3000);
+    } catch (error) {
+      console.error("Failed to stop recording:", error);
+      Alert.alert("Recording Error", "Could not save the recording. Please try again.");
+      setRecording(null);
+      setIsRecording(false);
+      setIsPaused(false);
+    }
   };
 
   return (
