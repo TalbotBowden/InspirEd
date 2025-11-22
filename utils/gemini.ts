@@ -2,10 +2,15 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import * as FileSystem from "expo-file-system";
 import Constants from "expo-constants";
 
-const API_KEY = Constants.expoConfig?.extra?.STUDIO_GEMINI_KEY || "";
+const API_KEY =
+  Constants.expoConfig?.extra?.STUDIO_GEMINI_KEY ||
+  (typeof process !== "undefined" && process.env?.STUDIO_GEMINI_KEY) ||
+  "";
 
 if (!API_KEY) {
   console.warn("STUDIO_GEMINI_KEY not found. AI features will not work.");
+  console.log("Constants.expoConfig?.extra:", Constants.expoConfig?.extra);
+  console.log("process.env.STUDIO_GEMINI_KEY:", typeof process !== "undefined" ? process.env?.STUDIO_GEMINI_KEY : "process not defined");
 }
 
 const genAI = new GoogleGenerativeAI(API_KEY);

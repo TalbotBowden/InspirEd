@@ -15,7 +15,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
-import { generateVisitSummary } from "@/utils/openai";
+import { generateVisitSummary } from "@/utils/gemini";
 import { Audio } from "expo-av";
 
 /*
@@ -324,7 +324,7 @@ export default function RecordVisitScreen() {
       navigation.goBack();
       
       setTimeout(async () => {
-        const summary = await generateVisitSummary("Mock transcript", readingLevel);
+        const summary = await generateVisitSummary(recordedUri, readingLevel);
         updateVisit(visitId, {
           ...summary,
           isProcessing: false,
