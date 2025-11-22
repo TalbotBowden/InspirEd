@@ -86,6 +86,9 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 const STORAGE_KEYS = {
   ONBOARDING_COMPLETED: "@InspirEd:onboardingCompleted",
   READING_LEVEL: "@InspirEd:readingLevel",
+  VISITS: "@InspirEd:visits",
+  CHAT_MESSAGES: "@InspirEd:chatMessages",
+  PLANNER_QUESTIONS: "@InspirEd:plannerQuestions",
 };
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -171,34 +174,68 @@ export function AppProvider({ children }: { children: ReactNode }) {
   ]);
 
   const addVisit = (visit: Visit) => {
-    setVisits((prev) => [visit, ...prev]);
+    setVisits((prev) => {
+      const newVisits = [visit, ...prev];
+      AsyncStorage.setItem(STORAGE_KEYS.VISITS, JSON.stringify(newVisits)).catch((error) =>
+        console.error("Error saving visit:", error)
+      );
+      return newVisits;
+    });
   };
 
   const updateVisit = (id: string, updates: Partial<Visit>) => {
-    setVisits((prev) =>
-      prev.map((visit) => (visit.id === id ? { ...visit, ...updates } : visit))
-    );
+    setVisits((prev) => {
+      const updatedVisits = prev.map((visit) =>
+        visit.id === id ? { ...visit, ...updates } : visit
+      );
+      AsyncStorage.setItem(STORAGE_KEYS.VISITS, JSON.stringify(updatedVisits)).catch((error) =>
+        console.error("Error updating visit:", error)
+      );
+      return updatedVisits;
+    });
   };
 
   const addChatMessage = (visitId: string, message: Message) => {
-    setChatMessages((prev) => ({
-      ...prev,
-      [visitId]: [...(prev[visitId] || []), message],
-    }));
+    setChatMessages((prev) => {
+      const newMessages = {
+        ...prev,
+        [visitId]: [...(prev[visitId] || []), message],
+      };
+      AsyncStorage.setItem(STORAGE_KEYS.CHAT_MESSAGES, JSON.stringify(newMessages)).catch(
+        (error) => console.error("Error saving chat message:", error)
+      );
+      return newMessages;
+    });
   };
 
   const addPlannerQuestion = (question: Question) => {
-    setPlannerQuestions((prev) => [...prev, question]);
+    setPlannerQuestions((prev) => {
+      const newQuestions = [...prev, question];
+      AsyncStorage.setItem(STORAGE_KEYS.PLANNER_QUESTIONS, JSON.stringify(newQuestions)).catch(
+        (error) => console.error("Error saving planner question:", error)
+      );
+      return newQuestions;
+    });
   };
 
   const updatePlannerQuestion = (id: string, updates: Partial<Question>) => {
-    setPlannerQuestions((prev) =>
-      prev.map((q) => (q.id === id ? { ...q, ...updates } : q))
-    );
+    setPlannerQuestions((prev) => {
+      const updatedQuestions = prev.map((q) => (q.id === id ? { ...q, ...updates } : q));
+      AsyncStorage.setItem(STORAGE_KEYS.PLANNER_QUESTIONS, JSON.stringify(updatedQuestions)).catch(
+        (error) => console.error("Error updating planner question:", error)
+      );
+      return updatedQuestions;
+    });
   };
 
   const deletePlannerQuestion = (id: string) => {
-    setPlannerQuestions((prev) => prev.filter((q) => q.id !== id));
+    setPlannerQuestions((prev) => {
+      const filteredQuestions = prev.filter((q) => q.id !== id);
+      AsyncStorage.setItem(STORAGE_KEYS.PLANNER_QUESTIONS, JSON.stringify(filteredQuestions)).catch(
+        (error) => console.error("Error deleting planner question:", error)
+      );
+      return filteredQuestions;
+    });
   };
 
   const addPDFSource = (source: PDFSource) => {
@@ -250,10 +287,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const loadStoredData = async () => {
       try {
-        const [storedOnboarding, storedLevel] = await Promise.all([
-          AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_COMPLETED),
-          AsyncStorage.getItem(STORAGE_KEYS.READING_LEVEL),
-        ]);
+        const [storedOnboarding, storedLevel, storedVisits, storedChatMessages, storedQuestions] =
+          await Promise.all([
+            AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_COMPLETED),
+            AsyncStorage.getItem(STORAGE_KEYS.READING_LEVEL),
+            AsyncStorage.getItem(STORAGE_KEYS.VISITS),
+            AsyncStorage.getItem(STORAGE_KEYS.CHAT_MESSAGES),
+            AsyncStorage.getItem(STORAGE_KEYS.PLANNER_QUESTIONS),
+          ]);
 
         if (storedOnboarding === "true") {
           setOnboardingCompleted(true);
@@ -261,6 +302,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         if (storedLevel) {
           setReadingLevel(parseInt(storedLevel, 10));
+        }
+
+        if (storedVisits) {
+          const parsedVisits = JSON.parse(storedVisits);
+          const visitsWithDates = parsedVisits.map((visit: any) => ({
+            ...visit,
+            date: new Date(visit.date),
+          }));
+          setVisits(visitsWithDates);
+        }
+
+        if (storedChatMessages) {
+          const parsedMessages = JSON.parse(storedChatMessages);
+          const messagesWithDates: { [key: string]: Message[] } = {};
+          for (const [visitId, messages] of Object.entries(parsedMessages)) {
+            messagesWithDates[visitId] = (messages as any[]).map((msg) => ({
+              ...msg,
+              timestamp: new Date(msg.timestamp),
+            }));
+          }
+          setChatMessages(messagesWithDates);
+        }
+
+        if (storedQuestions) {
+          setPlannerQuestions(JSON.parse(storedQuestions));
         }
       } catch (error) {
         console.error("Error loading stored data:", error);
