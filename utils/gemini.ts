@@ -1,4 +1,4 @@
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import Constants from "expo-constants";
 
 const CLOUD_FUNCTION_BASE_URL =
