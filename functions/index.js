@@ -86,7 +86,9 @@ exports.transcribeAndSummarize = onRequest(
         });
       }
 
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const modelName = "gemini-1.5-flash";
+      console.log(`[${correlationId}] Using Gemini model: ${modelName}`);
+      const model = genAI.getGenerativeModel({ model: modelName });
       const readingGuidance = getReadingLevelGuidance(readingLevel);
 
       const prompt = `You are a medical visit assistant helping parents of children with chronic pulmonary conditions.
