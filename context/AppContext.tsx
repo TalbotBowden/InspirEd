@@ -310,6 +310,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const visitsWithDates = parsedVisits.map((visit: any) => ({
             ...visit,
             date: new Date(visit.date),
+            transcription: visit.transcription ?? null,
           }));
           setVisits(visitsWithDates);
         }

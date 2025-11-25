@@ -333,7 +333,7 @@ export default function RecordVisitScreen() {
             readingLevel
           );
           
-          const aiSummary = await generateVisitSummary(
+          const aiExtraction = await generateVisitSummary(
             result.transcription,
             readingLevel
           );
@@ -341,7 +341,10 @@ export default function RecordVisitScreen() {
           updateVisit(visitId, {
             transcription: result.transcription,
             summary: result.summary,
-            ...aiSummary,
+            keyPoints: aiExtraction.keyPoints,
+            diagnoses: aiExtraction.diagnoses,
+            actions: aiExtraction.actions,
+            medicalTerms: aiExtraction.medicalTerms,
             isProcessing: false,
           });
         } catch (error) {
@@ -349,6 +352,11 @@ export default function RecordVisitScreen() {
           updateVisit(visitId, {
             isProcessing: false,
           });
+          Alert.alert(
+            "Processing Failed",
+            "Could not transcribe and summarize the recording. The visit has been saved, but you may need to review the audio manually.",
+            [{ text: "OK" }]
+          );
         }
       })();
     } catch (error) {

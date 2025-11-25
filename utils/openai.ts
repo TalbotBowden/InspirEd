@@ -1,8 +1,14 @@
-export async function generateVisitSummary(transcript: string, readingLevel: number): Promise<any> {
+export type VisitExtraction = {
+  keyPoints: string[];
+  diagnoses: string[];
+  actions: string[];
+  medicalTerms: { term: string; explanation: string }[];
+};
+
+export async function generateVisitSummary(transcript: string, readingLevel: number): Promise<VisitExtraction> {
   await new Promise((resolve) => setTimeout(resolve, 2000));
   
   return {
-    summary: "Doctor discussed recent test results. Lung function has improved by 15% since last visit. Continue current medication routine.",
     keyPoints: [
       "Lung function improved 15% since last visit",
       "Continue current medications as prescribed",

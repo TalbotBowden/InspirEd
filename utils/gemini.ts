@@ -3,14 +3,24 @@ import * as FileSystem from "expo-file-system";
 import Constants from "expo-constants";
 
 const getApiKey = (): string => {
-  const apiKey = process.env.GEMINI_API_KEY || Constants.expoConfig?.extra?.GEMINI_API_KEY;
+  const apiKey = 
+    process.env.GEMINI_API_KEY || 
+    Constants.expoConfig?.extra?.GEMINI_API_KEY ||
+    Constants.manifest2?.extra?.expoClient?.extra?.GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is not configured");
+    throw new Error("GEMINI_API_KEY is not configured. Please add it to your secrets.");
   }
   return apiKey;
 };
 
-const ai = new GoogleGenAI({ apiKey: getApiKey() });
+let ai: GoogleGenAI | null = null;
+
+const getAI = (): GoogleGenAI => {
+  if (!ai) {
+    ai = new GoogleGenAI({ apiKey: getApiKey() });
+  }
+  return ai;
+};
 
 export interface TranscriptionResult {
   transcription: string;
@@ -38,7 +48,7 @@ export async function transcribeAndSummarizeAudio(
 Do not add any commentary or additional text - just the transcription.`,
     ];
 
-    const transcriptionResponse = await ai.models.generateContent({
+    const transcriptionResponse = await getAI().models.generateContent({
       model: "gemini-2.5-flash",
       contents: transcriptionContents,
     });
@@ -54,13 +64,7 @@ Do not add any commentary or additional text - just the transcription.`,
       : "Use clear, accessible language appropriate for general audiences.";
 
     const summaryContents = [
-      {
-        inlineData: {
-          data: audioBase64,
-          mimeType: mimeType,
-        },
-      },
-      `This is a recording from a medical visit for a child with a chronic pulmonary condition. Analyze this audio and provide a concise, helpful summary that includes:
+      `This is a transcription from a medical visit for a child with a chronic pulmonary condition. Analyze this transcription and provide a concise, helpful summary that includes:
 
 - Main topics discussed during the visit
 - Key medical findings or observations
@@ -72,10 +76,13 @@ Do not add any commentary or additional text - just the transcription.`,
 
 ${readingLevelGuidance}
 
-Format the summary in a clear, readable way with proper paragraphs and bullet points where appropriate. Remember this is for a parent managing their child's care, so be empathetic and clear.`,
+Format the summary in a clear, readable way with proper paragraphs and bullet points where appropriate. Remember this is for a parent managing their child's care, so be empathetic and clear.
+
+TRANSCRIPTION:
+${transcription}`,
     ];
 
-    const summaryResponse = await ai.models.generateContent({
+    const summaryResponse = await getAI().models.generateContent({
       model: "gemini-2.5-flash",
       contents: summaryContents,
     });
