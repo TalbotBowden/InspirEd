@@ -2,7 +2,9 @@ import { GoogleGenAI } from "@google/genai";
 import * as FileSystem from "expo-file-system/legacy";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
-import { getRAGContext, loadKnowledgeBase } from "./rag";
+import { getRAGContext, getRAGContextWithCitations, loadKnowledgeBase, Citation } from "./rag";
+
+export type { Citation } from "./rag";
 
 const getApiKey = (): string => {
   const apiKey = 
@@ -294,18 +296,23 @@ Create 3-4 sections covering the main topics. Each section should be informative
   }
 }
 
+export interface EducationalResponse {
+  answer: string;
+  citations: Citation[];
+}
+
 export async function askEducationalQuestion(
   question: string,
   conversationHistory: { text: string; isUser: boolean }[] = [],
   readingLevel: number = 8
-): Promise<string> {
+): Promise<EducationalResponse> {
   try {
-    // Load knowledge base and get relevant context for this question
+    // Load knowledge base and get relevant context with citations
     await loadKnowledgeBase();
-    const ragContext = await getRAGContext(question, 3);
+    const { context: ragContext, citations } = await getRAGContextWithCitations(question, 3);
     
     const sourceContext = ragContext 
-      ? `\nTRUSTED MEDICAL SOURCES:\n${ragContext}\n\nUse the information from these trusted medical sources to inform your response. Base your answer on this verified information when relevant.\n`
+      ? `\n${ragContext}\n\nIMPORTANT: When using information from these sources, include inline citation markers like [1], [2], or [3] to indicate which source you're referencing. This helps parents verify the information.\n`
       : '';
 
     const historyContext = conversationHistory.length > 0
@@ -325,12 +332,12 @@ IMPORTANT GUIDELINES:
 6. If asked about specific symptoms or treatments, provide general educational information and emphasize discussing with their doctor
 7. Be encouraging and help parents feel more confident in understanding their child's care
 8. Keep responses concise but informative
-9. When relevant, ground your response in the trusted medical sources provided above
+9. When using information from the trusted medical sources, include inline citation markers like [1], [2], or [3]
 
 ${historyContext}PARENT'S QUESTION:
 ${question}
 
-Please provide a helpful, educational response:`;
+Please provide a helpful, educational response with inline citations where appropriate:`;
 
     const response = await getAI().models.generateContent({
       model: "gemini-2.5-flash",
@@ -340,13 +347,19 @@ Please provide a helpful, educational response:`;
     const answer = response.text || "";
     
     if (!answer) {
-      return "I'm sorry, I couldn't generate a response. Please try asking your question again.";
+      return {
+        answer: "I'm sorry, I couldn't generate a response. Please try asking your question again.",
+        citations: [],
+      };
     }
 
-    return answer;
+    return { answer, citations };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error("Gemini Education error:", errorMessage);
-    return "I'm having trouble answering your question right now. Please try again in a moment.";
+    return {
+      answer: "I'm having trouble answering your question right now. Please try again in a moment.",
+      citations: [],
+    };
   }
 }

@@ -29,6 +29,18 @@ interface RetrievalResult {
   similarity: number;
 }
 
+export interface Citation {
+  id: string;
+  sourceTitle: string;
+  excerpt: string;
+  similarity: number;
+}
+
+export interface RAGContextWithCitations {
+  context: string;
+  citations: Citation[];
+}
+
 let knowledgeBase: KnowledgeBase | null = null;
 let ai: GoogleGenAI | null = null;
 
@@ -159,6 +171,17 @@ export async function retrieveRelevantContext(
 }
 
 /**
+ * Format source name for display
+ */
+function formatSourceName(source: string): string {
+  return source
+    .replace(/-/g, ' ')
+    .replace(/_/g, ' ')
+    .replace(/\d+$/, '')
+    .trim();
+}
+
+/**
  * Get formatted context for AI prompts
  */
 export async function getRAGContext(query: string, topK: number = 3): Promise<string> {
@@ -169,16 +192,41 @@ export async function getRAGContext(query: string, topK: number = 3): Promise<st
   }
   
   const contextParts = results.map((result, index) => {
-    const sourceLabel = result.chunk.source
-      .replace(/-/g, ' ')
-      .replace(/_/g, ' ')
-      .replace(/\d+$/, '')
-      .trim();
-    
+    const sourceLabel = formatSourceName(result.chunk.source);
     return `[Source ${index + 1}: ${sourceLabel}]\n${result.chunk.text}`;
   });
   
   return `TRUSTED MEDICAL SOURCES:\n\n${contextParts.join('\n\n---\n\n')}`;
+}
+
+/**
+ * Get formatted context with citation metadata for UI display
+ */
+export async function getRAGContextWithCitations(
+  query: string, 
+  topK: number = 3
+): Promise<RAGContextWithCitations> {
+  const results = await retrieveRelevantContext(query, topK);
+  
+  if (results.length === 0) {
+    return { context: '', citations: [] };
+  }
+  
+  const citations: Citation[] = results.map((result, index) => ({
+    id: `source-${index + 1}`,
+    sourceTitle: formatSourceName(result.chunk.source),
+    excerpt: result.chunk.text.substring(0, 150) + (result.chunk.text.length > 150 ? '...' : ''),
+    similarity: Math.round(result.similarity * 100),
+  }));
+  
+  const contextParts = results.map((result, index) => {
+    const sourceLabel = formatSourceName(result.chunk.source);
+    return `[Source ${index + 1}: ${sourceLabel}]\nWhen citing this source, use the marker [${index + 1}].\n${result.chunk.text}`;
+  });
+  
+  const context = `TRUSTED MEDICAL SOURCES (cite using [1], [2], [3] markers):\n\n${contextParts.join('\n\n---\n\n')}`;
+  
+  return { context, citations };
 }
 
 /**
