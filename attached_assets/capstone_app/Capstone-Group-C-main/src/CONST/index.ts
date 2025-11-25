@@ -1,0 +1,40 @@
+const CONST = {
+  // Common
+  DAYS_IN_WEEK: 7,
+
+  // Theme
+  THEME_STORAGE_KEY: "@app_theme",
+
+  // UI Sizes
+  TAB_ICON_SIZE: 24,
+  DOT_RADIUS: 4,
+  CARD_BORDER_RADIUS: 8,
+  HEADER_HEIGHT: 40,
+  ICON_SIZE: 28,
+  LIST_ICON_SIZE: 14,
+  HOME_HEADER_ICON_SIZE: 24,
+  ANIMATED_HEADER_HEIGHT: 60,
+  HEADER_TRANSITION_DURATION: 300,
+  AVATAR_SIZE_DEFAULT: 64,
+  AVATAR_INITIAL_SCALE_FACTOR: 0.35,
+  LINE_CHART_HEIGHT: 200,
+
+  // Icon
+  DEFAULT_STROKE_WIDTH: 2,
+
+  // Font Size
+  FONT_SIZE_SM: 12,
+  FONT_SIZE_MD: 14,
+  FONT_SIZE_LG: 20,
+  FONT_SIZE_XL: 24,
+
+  // Focus screen
+  FOCUS_ANIMATION_WIDTH_OFFSET: -10, // So that when the user taps, it doesnt immediately fill the screen
+  FOCUS_ANIMATION_COMPLETED_WIDTH: 100,
+  HOLD_TO_EXIT_DURATION: 2000,
+
+  // Switch
+  SWITCH_SCALE: 0.675,
+};
+
+export default CONST;
