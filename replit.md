@@ -23,9 +23,35 @@ The system is designed with a privacy-first approach, requiring explicit consent
 
 ### AI & Knowledge Management
 All AI-generated content is grounded in administrator-vetted PDF sources to ensure medical accuracy.
-- **Gemini API (Google):** The primary AI engine (Gemini 2.5 Flash) handles audio transcription from m4a recordings and generates medical summaries from these transcriptions. Summaries are tailored to the parent's reading level (6th-12th grade SMOG index) and focus on pediatric pulmonary care terminology.
+- **Gemini API (Google):** The primary AI engine (Gemini 2.5 Flash) handles audio transcription from m4a recordings and generates medical summaries from these transcriptions. Summaries are tailored to the parent's communication style (Essential, Balanced, Detailed, Comprehensive) and focus on pediatric pulmonary care terminology.
 - **OpenAI API (Planned):** Will be used for structured extraction of key points, diagnoses, action items, and medical terms from Gemini transcripts, not for summary generation.
-- **AI Features:** Include visit summarization, contextual Q&A for clarifying questions, and an educational chat based on the PDF knowledge base. Reading level adaptation is automatic during onboarding and customizable.
+- **AI Features:** Include visit summarization, contextual Q&A for clarifying questions, and an educational chat based on the PDF knowledge base. Communication style adaptation is automatic during onboarding and customizable.
+
+### Local RAG System
+The app implements a local Retrieval-Augmented Generation (RAG) system for grounding AI educational responses in trusted medical sources:
+
+**Architecture:**
+- **Knowledge Base:** Pre-processed PDF content stored in `assets/medical-knowledge.json` (485KB, 23 chunks from 3 PDFs)
+- **Processing Script:** `scripts/process-pdfs.js` extracts text, chunks content, and generates embeddings using Gemini API
+- **RAG Service:** `utils/rag.ts` provides vector similarity search using cosine similarity
+- **Integration:** Educational AI functions automatically retrieve relevant context before generating responses
+
+**Current Sources:**
+1. Serrano & Pérez-Gil (2006) - Pulmonary surfactant structure and function
+2. Whitsett et al. - Surfactant proteins and lung biology
+3. Nogee (1998) - Genetic disorders of surfactant metabolism
+
+**RAG Flow:**
+1. User asks a question in the Education chat
+2. System generates an embedding for the query using Gemini
+3. Cosine similarity search finds the 3 most relevant chunks
+4. Retrieved context is added to the AI prompt as "TRUSTED MEDICAL SOURCES"
+5. Gemini generates a response grounded in the retrieved medical information
+
+**Future Enhancements:**
+- Citation tracking for transparency (per-section source mapping)
+- Retry logic with exponential backoff in PDF processor
+- Admin interface for managing PDF sources
 
 ### Data Storage
 Local data is stored using AsyncStorage, including user profiles, visit recordings, AI summaries, chat history, planner questions, and learning module progress. Planned backend integration will include a vector database for PDF content and potentially cloud storage for backups.
