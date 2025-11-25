@@ -2,6 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import * as FileSystem from "expo-file-system/legacy";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
+import { getRAGContext, loadKnowledgeBase } from "./rag";
 
 const getApiKey = (): string => {
   const apiKey = 
@@ -216,13 +217,22 @@ export async function generateModuleLesson(
   readingLevel: number = 8
 ): Promise<GeneratedLesson> {
   try {
+    // Load knowledge base and get relevant context for this topic
+    await loadKnowledgeBase();
+    const topicQuery = `${moduleTitle} ${topics.join(" ")} pulmonary children`;
+    const ragContext = await getRAGContext(topicQuery, 3);
+    
+    const sourceContext = ragContext 
+      ? `\n\nUse the following trusted medical sources to inform your content. Base your educational material on this verified information:\n\n${ragContext}\n\n`
+      : '';
+
     const prompt = `You are creating educational content for parents of children with chronic pulmonary conditions. Generate a comprehensive lesson for the following learning module:
 
 MODULE: ${moduleTitle}
 DESCRIPTION: ${moduleDescription}
 TOPICS TO COVER: ${topics.join(", ")}
 DIFFICULTY LEVEL: ${difficulty}
-
+${sourceContext}
 IMPORTANT GUIDELINES:
 1. Use clear, simple language appropriate for a ${readingLevel}th grade reading level
 2. Be empathetic - these parents are managing their child's chronic condition
@@ -231,6 +241,7 @@ IMPORTANT GUIDELINES:
 5. NEVER provide specific medical advice - always encourage consulting with their healthcare provider
 6. Make the content encouraging and supportive
 7. Include real-world examples parents can relate to
+8. Ground your content in the trusted medical sources provided above when available
 
 Generate the lesson in the following JSON format (respond with ONLY valid JSON, no markdown):
 {
@@ -289,6 +300,14 @@ export async function askEducationalQuestion(
   readingLevel: number = 8
 ): Promise<string> {
   try {
+    // Load knowledge base and get relevant context for this question
+    await loadKnowledgeBase();
+    const ragContext = await getRAGContext(question, 3);
+    
+    const sourceContext = ragContext 
+      ? `\nTRUSTED MEDICAL SOURCES:\n${ragContext}\n\nUse the information from these trusted medical sources to inform your response. Base your answer on this verified information when relevant.\n`
+      : '';
+
     const historyContext = conversationHistory.length > 0
       ? `PREVIOUS CONVERSATION:\n${conversationHistory.map(msg => 
           `${msg.isUser ? 'Parent' : 'Assistant'}: ${msg.text}`
@@ -296,7 +315,7 @@ export async function askEducationalQuestion(
       : '';
 
     const prompt = `You are a caring and knowledgeable medical education assistant for parents of children with chronic pulmonary conditions. Your role is to help parents better understand medical concepts, treatments, and terminology related to their child's care.
-
+${sourceContext}
 IMPORTANT GUIDELINES:
 1. Use clear, simple language appropriate for a ${readingLevel}th grade reading level
 2. Be empathetic and supportive - these parents are managing a child's chronic condition
@@ -306,6 +325,7 @@ IMPORTANT GUIDELINES:
 6. If asked about specific symptoms or treatments, provide general educational information and emphasize discussing with their doctor
 7. Be encouraging and help parents feel more confident in understanding their child's care
 8. Keep responses concise but informative
+9. When relevant, ground your response in the trusted medical sources provided above
 
 ${historyContext}PARENT'S QUESTION:
 ${question}
