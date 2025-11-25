@@ -29,11 +29,8 @@ function AppContent() {
     if (hasChanged && navigationRef.current) {
       let routeName: string;
       if (isLoading) routeName = "Loading";
-      // TODO: Remove this override after testing - skipping onboarding for dev
+      else if (!onboardingCompleted) routeName = "Onboarding";
       else routeName = "Main";
-      // Original logic:
-      // else if (!onboardingCompleted) routeName = "Onboarding";
-      // else routeName = "Main";
 
       navigationRef.current.reset({
         index: 0,
