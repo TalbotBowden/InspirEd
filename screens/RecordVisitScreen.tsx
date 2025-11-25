@@ -36,9 +36,17 @@ import { Audio } from "expo-av";
 
 export default function RecordVisitScreen() {
   const { theme } = useTheme();
-  const { addVisit, updateVisit, readingLevel } = useAppContext();
+  const { addVisit, updateVisit, readingLevel, privacyConsent, setPrivacyConsent } = useAppContext();
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  
+  const [showConsentOverlay, setShowConsentOverlay] = useState(!privacyConsent);
+  
+  useEffect(() => {
+    if (!privacyConsent) {
+      setShowConsentOverlay(true);
+    }
+  }, [privacyConsent]);
   
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -165,6 +173,11 @@ export default function RecordVisitScreen() {
   };
 
   const handleRecord = async () => {
+    if (!privacyConsent) {
+      setShowConsentOverlay(true);
+      return;
+    }
+    
     if (!permissionGranted) {
       await requestPermissions();
       return;
@@ -400,6 +413,100 @@ export default function RecordVisitScreen() {
 
   const playbackProgress = playbackDuration > 0 ? playbackPosition / playbackDuration : 0;
 
+  const handleAcceptConsent = async () => {
+    try {
+      await setPrivacyConsent(true);
+      setShowConsentOverlay(false);
+    } catch (error) {
+      console.error("Error setting consent:", error);
+    }
+  };
+
+  const handleDeclineConsent = () => {
+    navigation.goBack();
+  };
+
+  if (showConsentOverlay) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.primary }]}>
+        <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
+          <Pressable onPress={handleDeclineConsent} style={styles.headerButton}>
+            <ThemedText style={styles.headerButtonText}>Back</ThemedText>
+          </Pressable>
+          <ThemedText style={styles.headerTitle}>Before Recording</ThemedText>
+          <View style={styles.headerButton} />
+        </View>
+
+        <ScrollView 
+          style={styles.consentContainer} 
+          contentContainerStyle={styles.consentContent}
+        >
+          <View style={styles.consentIconContainer}>
+            <Icon name="shield" size={64} color="white" />
+          </View>
+
+          <ThemedText style={styles.consentTitle}>
+            Your Privacy Matters
+          </ThemedText>
+
+          <ThemedText style={styles.consentDescription}>
+            Before you start recording, please understand how your data is handled:
+          </ThemedText>
+
+          <View style={styles.consentItems}>
+            <View style={styles.consentItem}>
+              <Icon name="home" size={24} color={theme.accent} />
+              <View style={styles.consentItemText}>
+                <ThemedText style={styles.consentItemTitle}>Stored on Your Device</ThemedText>
+                <ThemedText style={styles.consentItemDescription}>
+                  Recordings stay on your phone. We don't have access to them.
+                </ThemedText>
+              </View>
+            </View>
+
+            <View style={styles.consentItem}>
+              <Icon name="sparkles" size={24} color={theme.accent} />
+              <View style={styles.consentItemText}>
+                <ThemedText style={styles.consentItemTitle}>AI Processing</ThemedText>
+                <ThemedText style={styles.consentItemDescription}>
+                  Audio is sent securely to Google AI to create your summary.
+                </ThemedText>
+              </View>
+            </View>
+
+            <View style={styles.consentItem}>
+              <Icon name="trash" size={24} color={theme.accent} />
+              <View style={styles.consentItemText}>
+                <ThemedText style={styles.consentItemTitle}>You're in Control</ThemedText>
+                <ThemedText style={styles.consentItemDescription}>
+                  Delete any recording anytime from your Profile settings.
+                </ThemedText>
+              </View>
+            </View>
+          </View>
+
+          <Pressable
+            onPress={handleAcceptConsent}
+            style={[styles.consentButton, { backgroundColor: "white" }]}
+          >
+            <ThemedText style={[styles.consentButtonText, { color: theme.primary }]}>
+              I Understand, Let's Record
+            </ThemedText>
+          </Pressable>
+
+          <Pressable
+            onPress={handleDeclineConsent}
+            style={styles.consentSecondaryButton}
+          >
+            <ThemedText style={styles.consentSecondaryButtonText}>
+              Not Now
+            </ThemedText>
+          </Pressable>
+        </ScrollView>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: theme.primary }]}>
       <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
@@ -613,9 +720,17 @@ export default function RecordVisitScreen() {
           </View>
 
           {!isRecording && (
-            <ThemedText style={styles.instruction}>
-              Find a quiet spot and tap to start recording
-            </ThemedText>
+            <>
+              <ThemedText style={styles.instruction}>
+                Find a quiet spot and tap to start recording
+              </ThemedText>
+              <View style={styles.consentNotice}>
+                <Icon name="shield" size={14} color="rgba(255,255,255,0.8)" />
+                <ThemedText style={styles.consentNoticeText}>
+                  Your recording will be processed by AI to create a summary
+                </ThemedText>
+              </View>
+            </>
           )}
         </View>
       )}
@@ -703,6 +818,19 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.8)",
     fontSize: 16,
     textAlign: "center",
+  },
+  consentNotice: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginTop: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
+  },
+  consentNoticeText: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 12,
+    textAlign: "center",
+    flex: 1,
   },
   progressContainer: {
     width: "100%",
@@ -805,5 +933,75 @@ const styles = StyleSheet.create({
   viewHistoryButtonText: {
     fontSize: 16,
     fontWeight: "600",
+  },
+  consentContainer: {
+    flex: 1,
+  },
+  consentContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    padding: Spacing.xl,
+  },
+  consentIconContainer: {
+    alignItems: "center",
+    marginBottom: Spacing.xl,
+  },
+  consentTitle: {
+    color: "white",
+    fontSize: 28,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: Spacing.md,
+  },
+  consentDescription: {
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: Spacing.xl,
+    lineHeight: 24,
+  },
+  consentItems: {
+    gap: Spacing.lg,
+    marginBottom: Spacing["2xl"],
+  },
+  consentItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: Spacing.md,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+  },
+  consentItemText: {
+    flex: 1,
+  },
+  consentItemTitle: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  consentItemDescription: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  consentButton: {
+    paddingVertical: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    alignItems: "center",
+    marginBottom: Spacing.md,
+  },
+  consentButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  consentSecondaryButton: {
+    paddingVertical: Spacing.md,
+    alignItems: "center",
+  },
+  consentSecondaryButtonText: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 14,
   },
 });

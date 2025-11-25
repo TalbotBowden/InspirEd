@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { StyleSheet, View, TextInput, Platform, ActivityIndicator, Pressable } from "react-native";
+import { StyleSheet, View, TextInput, Platform, ActivityIndicator, Pressable, ScrollView as RNScrollView } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/Button";
+import { Icon } from "@/components/Icon";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { useAppContext } from "@/context/AppContext";
@@ -15,9 +16,9 @@ const DEFAULT_READING_LEVEL = 8;
 export default function OnboardingScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
-  const { readingLevel, setReadingLevel, completeOnboarding } = useAppContext();
+  const { readingLevel, setReadingLevel, completeOnboarding, setPrivacyConsent } = useAppContext();
   const [userInput, setUserInput] = useState("");
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(-1);
   const [allResponses, setAllResponses] = useState<string[]>([]);
   const [isCompleting, setIsCompleting] = useState(false);
   const [showTransition, setShowTransition] = useState(false);
@@ -39,7 +40,12 @@ export default function OnboardingScreen() {
     },
   ];
 
-  const currentQuestion = questions[step];
+  const currentQuestion = step >= 0 ? questions[step] : null;
+
+  const handleAcceptPrivacy = async () => {
+    await setPrivacyConsent(true);
+    setStep(0);
+  };
 
   const handleContinue = async () => {
     if (isCompleting) return;
@@ -93,7 +99,7 @@ export default function OnboardingScreen() {
   };
 
   const wordCount = userInput.trim().split(/\s+/).filter((w) => w.length > 0).length;
-  const canContinue = wordCount >= currentQuestion.minWords;
+  const canContinue = currentQuestion ? wordCount >= currentQuestion.minWords : false;
 
   const scrollViewProps = {
     style: { flex: 1, backgroundColor: theme.backgroundRoot },
@@ -107,7 +113,63 @@ export default function OnboardingScreen() {
     keyboardShouldPersistTaps: "handled" as const,
   };
 
-  const ScrollComponent = Platform.OS === "web" ? require("react-native").ScrollView : KeyboardAwareScrollView;
+  const ScrollComponent = Platform.OS === "web" ? RNScrollView : KeyboardAwareScrollView;
+
+  if (step === -1) {
+    return (
+      <ScrollComponent {...scrollViewProps}>
+        <View style={styles.header}>
+          <ThemedText style={styles.title}>Welcome to InspirEd</ThemedText>
+          <ThemedText style={[styles.tagline, { color: theme.primary }]}>
+            Learn to Empower. Empower to Hope.
+          </ThemedText>
+        </View>
+
+        <ThemedView style={[styles.card, { backgroundColor: theme.backgroundSecondary }]}>
+          <ThemedText style={styles.consentTitle}>How We Protect Your Privacy</ThemedText>
+          <ThemedText style={[styles.consentText, { color: theme.textSecondary }]}>
+            InspirEd helps you record and understand doctor visits. Before we get started, here's how your information is handled:
+          </ThemedText>
+
+          <View style={styles.consentItem}>
+            <Icon name="home" size={24} color={theme.primary} />
+            <View style={styles.consentItemText}>
+              <ThemedText style={styles.consentItemTitle}>Stored on Your Device</ThemedText>
+              <ThemedText style={[styles.consentItemDescription, { color: theme.textSecondary }]}>
+                Your recordings and visit information are saved locally on your phone. We don't upload your data to our servers.
+              </ThemedText>
+            </View>
+          </View>
+
+          <View style={styles.consentItem}>
+            <Icon name="sparkles" size={24} color={theme.primary} />
+            <View style={styles.consentItemText}>
+              <ThemedText style={styles.consentItemTitle}>AI-Powered Summaries</ThemedText>
+              <ThemedText style={[styles.consentItemDescription, { color: theme.textSecondary }]}>
+                When you record a visit, the audio is sent securely to Google's AI service to create transcriptions and summaries. This helps make medical information easier to understand.
+              </ThemedText>
+            </View>
+          </View>
+
+          <View style={styles.consentItem}>
+            <Icon name="shield" size={24} color={theme.primary} />
+            <View style={styles.consentItemText}>
+              <ThemedText style={styles.consentItemTitle}>You're in Control</ThemedText>
+              <ThemedText style={[styles.consentItemDescription, { color: theme.textSecondary }]}>
+                You can delete any visit recording at any time. Your data stays with you.
+              </ThemedText>
+            </View>
+          </View>
+        </ThemedView>
+
+        <View style={styles.buttonContainer}>
+          <Button onPress={handleAcceptPrivacy}>
+            I Understand, Let's Get Started
+          </Button>
+        </View>
+      </ScrollComponent>
+    );
+  }
 
   if (showTransition) {
     return (
@@ -124,6 +186,8 @@ export default function OnboardingScreen() {
       </ThemedView>
     );
   }
+
+  if (!currentQuestion) return null;
 
   return (
     <ScrollComponent {...scrollViewProps}>
@@ -274,5 +338,33 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
+  },
+  consentTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: Spacing.sm,
+  },
+  consentText: {
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: Spacing.lg,
+  },
+  consentItem: {
+    flexDirection: "row",
+    gap: Spacing.md,
+    marginBottom: Spacing.lg,
+    alignItems: "flex-start",
+  },
+  consentItemText: {
+    flex: 1,
+  },
+  consentItemTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  consentItemDescription: {
+    fontSize: 14,
+    lineHeight: 20,
   },
 });

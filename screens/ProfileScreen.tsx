@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, View, TextInput, Pressable } from "react-native";
+import { StyleSheet, View, TextInput, Pressable, Alert, Platform } from "react-native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ScreenKeyboardAwareScrollView } from "@/components/ScreenKeyboardAwareScrollView";
 import { ThemedText } from "@/components/ThemedText";
@@ -28,7 +28,37 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
     setIsAdmin,
     readingLevel,
     resetOnboarding,
+    privacyConsent,
+    privacyConsentDate,
+    visits,
+    clearAllData,
   } = useAppContext();
+
+  const handleClearData = () => {
+    const confirmClear = () => {
+      clearAllData();
+      if (Platform.OS === "web") {
+        window.alert("Your data has been cleared.");
+      } else {
+        Alert.alert("Data Cleared", "All your visit recordings, chat history, and planner questions have been removed.");
+      }
+    };
+
+    if (Platform.OS === "web") {
+      if (window.confirm("Are you sure you want to delete all your data? This includes all visit recordings, chat history, and planner questions. This action cannot be undone.")) {
+        confirmClear();
+      }
+    } else {
+      Alert.alert(
+        "Clear All Data",
+        "Are you sure you want to delete all your data? This includes all visit recordings, chat history, and planner questions. This action cannot be undone.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Delete Everything", style: "destructive", onPress: confirmClear },
+        ]
+      );
+    }
+  };
 
   const getStyleLabel = (level: number): string => {
     if (level <= 6) return "Essential";
@@ -58,8 +88,60 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
           />
         </SettingSection>
 
-        <SettingSection title="Privacy">
-          <SettingToggle label="Auto-save summaries" value={autoSave} onValueChange={setAutoSave} />
+        <SettingSection title="Auto-Save">
+          <SettingToggle label="Save summaries automatically" value={autoSave} onValueChange={setAutoSave} />
+        </SettingSection>
+
+        <SettingSection title="Privacy & Data">
+          <ThemedView style={[styles.privacyCard, { backgroundColor: theme.backgroundSecondary }]}>
+            <View style={styles.privacyItem}>
+              <Icon name="home" size={20} color={theme.primary} />
+              <View style={styles.privacyItemText}>
+                <ThemedText style={styles.privacyItemTitle}>Data Storage</ThemedText>
+                <ThemedText style={[styles.privacyItemDescription, { color: theme.textSecondary }]}>
+                  All data is stored on your device
+                </ThemedText>
+              </View>
+            </View>
+            
+            <View style={styles.privacyItem}>
+              <Icon name="sparkles" size={20} color={theme.primary} />
+              <View style={styles.privacyItemText}>
+                <ThemedText style={styles.privacyItemTitle}>AI Processing</ThemedText>
+                <ThemedText style={[styles.privacyItemDescription, { color: theme.textSecondary }]}>
+                  Recordings sent securely to Google AI for transcription
+                </ThemedText>
+              </View>
+            </View>
+            
+            {privacyConsent && privacyConsentDate ? (
+              <View style={styles.privacyItem}>
+                <Icon name="checkmark-circle" size={20} color={theme.accent} />
+                <View style={styles.privacyItemText}>
+                  <ThemedText style={styles.privacyItemTitle}>Privacy Acknowledged</ThemedText>
+                  <ThemedText style={[styles.privacyItemDescription, { color: theme.textSecondary }]}>
+                    {privacyConsentDate.toLocaleDateString()}
+                  </ThemedText>
+                </View>
+              </View>
+            ) : null}
+          </ThemedView>
+
+          <View style={styles.dataStats}>
+            <ThemedText style={[styles.dataStatsText, { color: theme.textSecondary }]}>
+              {visits.length} visit{visits.length !== 1 ? "s" : ""} saved on this device
+            </ThemedText>
+          </View>
+
+          <Pressable
+            onPress={handleClearData}
+            style={[styles.deleteButton, { borderColor: "#FF6B6B" }]}
+          >
+            <Icon name="trash" size={16} color="#FF6B6B" />
+            <ThemedText style={[styles.deleteButtonText, { color: "#FF6B6B" }]}>
+              Delete All My Data
+            </ThemedText>
+          </Pressable>
         </SettingSection>
 
         <SettingSection title="Communication Style">
@@ -251,5 +333,46 @@ const styles = StyleSheet.create({
   },
   version: {
     fontSize: 12,
+  },
+  privacyCard: {
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+  },
+  privacyItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  privacyItemText: {
+    flex: 1,
+  },
+  privacyItemTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  privacyItemDescription: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  dataStats: {
+    alignItems: "center",
+    marginVertical: Spacing.md,
+  },
+  dataStatsText: {
+    fontSize: 13,
+  },
+  deleteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+  },
+  deleteButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
   },
 });

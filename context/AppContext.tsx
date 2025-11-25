@@ -60,10 +60,14 @@ type AppContextType = {
   setAutoSave: (value: boolean) => void;
   isAdmin: boolean;
   setIsAdmin: (value: boolean) => void;
+  privacyConsent: boolean;
+  setPrivacyConsent: (value: boolean) => Promise<void>;
+  privacyConsentDate: Date | null;
   isLoading: boolean;
   onboardingCompleted: boolean;
   completeOnboarding: () => Promise<void>;
   resetOnboarding: () => Promise<void>;
+  clearAllData: () => Promise<void>;
   visits: Visit[];
   addVisit: (visit: Visit) => void;
   updateVisit: (id: string, updates: Partial<Visit>) => void;
@@ -93,6 +97,8 @@ const STORAGE_KEYS = {
   VISITS: "@InspirEd:visits",
   CHAT_MESSAGES: "@InspirEd:chatMessages",
   PLANNER_QUESTIONS: "@InspirEd:plannerQuestions",
+  PRIVACY_CONSENT: "@InspirEd:privacyConsent",
+  PRIVACY_CONSENT_DATE: "@InspirEd:privacyConsentDate",
 };
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -101,6 +107,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [recordingQuality, setRecordingQuality] = useState<"high" | "medium">("high");
   const [autoSave, setAutoSave] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [privacyConsent, setPrivacyConsentState] = useState(false);
+  const [privacyConsentDate, setPrivacyConsentDate] = useState<Date | null>(null);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [visits, setVisits] = useState<Visit[]>([]);
@@ -366,6 +374,51 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const setPrivacyConsent = async (value: boolean) => {
+    setPrivacyConsentState(value);
+    try {
+      if (value) {
+        const now = new Date();
+        setPrivacyConsentDate(now);
+        await AsyncStorage.setItem(STORAGE_KEYS.PRIVACY_CONSENT, "true");
+        await AsyncStorage.setItem(STORAGE_KEYS.PRIVACY_CONSENT_DATE, now.toISOString());
+      } else {
+        setPrivacyConsentDate(null);
+        await AsyncStorage.multiRemove([
+          STORAGE_KEYS.PRIVACY_CONSENT,
+          STORAGE_KEYS.PRIVACY_CONSENT_DATE,
+        ]);
+      }
+    } catch (error) {
+      console.error("Error saving privacy consent:", error);
+      throw error;
+    }
+  };
+
+  const clearAllData = async () => {
+    try {
+      await AsyncStorage.multiRemove([
+        STORAGE_KEYS.VISITS,
+        STORAGE_KEYS.CHAT_MESSAGES,
+        STORAGE_KEYS.PLANNER_QUESTIONS,
+        STORAGE_KEYS.PRIVACY_CONSENT,
+        STORAGE_KEYS.PRIVACY_CONSENT_DATE,
+      ]);
+      setVisits([]);
+      setChatMessages({});
+      setPlannerQuestions([]);
+      setEducationChatMessages([]);
+      setPrivacyConsentState(false);
+      setPrivacyConsentDate(null);
+      setLearningModules((prev) =>
+        prev.map((module) => ({ ...module, progress: 0, completed: false }))
+      );
+    } catch (error) {
+      console.error("Error clearing all data:", error);
+      throw error;
+    }
+  };
+
   const updateReadingLevel = async (level: number) => {
     setReadingLevel(level);
     try {
@@ -379,13 +432,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const loadStoredData = async () => {
       try {
-        const [storedOnboarding, storedLevel, storedVisits, storedChatMessages, storedQuestions] =
+        const [storedOnboarding, storedLevel, storedVisits, storedChatMessages, storedQuestions, storedConsent, storedConsentDate] =
           await Promise.all([
             AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_COMPLETED),
             AsyncStorage.getItem(STORAGE_KEYS.READING_LEVEL),
             AsyncStorage.getItem(STORAGE_KEYS.VISITS),
             AsyncStorage.getItem(STORAGE_KEYS.CHAT_MESSAGES),
             AsyncStorage.getItem(STORAGE_KEYS.PLANNER_QUESTIONS),
+            AsyncStorage.getItem(STORAGE_KEYS.PRIVACY_CONSENT),
+            AsyncStorage.getItem(STORAGE_KEYS.PRIVACY_CONSENT_DATE),
           ]);
 
         if (storedOnboarding === "true") {
@@ -394,6 +449,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         if (storedLevel) {
           setReadingLevel(parseInt(storedLevel, 10));
+        }
+
+        if (storedConsent === "true") {
+          setPrivacyConsentState(true);
+        }
+
+        if (storedConsentDate) {
+          setPrivacyConsentDate(new Date(storedConsentDate));
         }
 
         if (storedVisits) {
@@ -444,10 +507,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setAutoSave,
         isAdmin,
         setIsAdmin,
+        privacyConsent,
+        setPrivacyConsent,
+        privacyConsentDate,
         isLoading,
         onboardingCompleted,
         completeOnboarding,
         resetOnboarding,
+        clearAllData,
         visits,
         addVisit,
         updateVisit,
