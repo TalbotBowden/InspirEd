@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, View, TextInput, Platform, ActivityIndicator } from "react-native";
+import { StyleSheet, View, TextInput, Platform, ActivityIndicator, Pressable } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/ThemedText";
@@ -10,10 +10,12 @@ import { Spacing, BorderRadius } from "@/constants/theme";
 import { useAppContext } from "@/context/AppContext";
 import { analyzeReadingLevel } from "@/utils/textAnalysis";
 
+const DEFAULT_READING_LEVEL = 8;
+
 export default function OnboardingScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
-  const { setReadingLevel, completeOnboarding } = useAppContext();
+  const { readingLevel, setReadingLevel, completeOnboarding } = useAppContext();
   const [userInput, setUserInput] = useState("");
   const [step, setStep] = useState(0);
   const [allResponses, setAllResponses] = useState<string[]>([]);
@@ -69,6 +71,24 @@ export default function OnboardingScreen() {
       };
       
       completeFlow();
+    }
+  };
+
+  const handleSkip = async () => {
+    if (isCompleting) return;
+    setIsCompleting(true);
+    
+    try {
+      // If readingLevel is still the default (first time), keep it
+      // If it's been customized (redo setup), also keep the existing value
+      // Only set to default if somehow it's not set
+      if (readingLevel === 0) {
+        await setReadingLevel(DEFAULT_READING_LEVEL);
+      }
+      await completeOnboarding();
+    } catch (error) {
+      console.error("Error skipping onboarding:", error);
+      setIsCompleting(false);
     }
   };
 
@@ -143,9 +163,15 @@ export default function OnboardingScreen() {
         </ThemedView>
 
         <View style={styles.buttonContainer}>
-          <Button onPress={handleContinue} disabled={!canContinue}>
+          <Button onPress={handleContinue} disabled={!canContinue || isCompleting}>
             {step < questions.length - 1 ? "Continue" : "Get Started"}
           </Button>
+          
+          <Pressable onPress={handleSkip} style={styles.skipButton} disabled={isCompleting}>
+            <ThemedText style={[styles.skipText, { color: theme.textSecondary }]}>
+              Skip for now
+            </ThemedText>
+          </Pressable>
         </View>
 
         <View style={styles.progressContainer}>
@@ -229,6 +255,14 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     marginTop: Spacing.md,
+    gap: Spacing.md,
+    alignItems: "center",
+  },
+  skipButton: {
+    paddingVertical: Spacing.sm,
+  },
+  skipText: {
+    fontSize: 14,
   },
   progressContainer: {
     flexDirection: "row",
