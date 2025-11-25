@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 
@@ -8,12 +8,6 @@ const getApiKey = (): string => {
     process.env.GEMINI_API_KEY || 
     Constants.expoConfig?.extra?.GEMINI_API_KEY ||
     Constants.manifest2?.extra?.expoClient?.extra?.GEMINI_API_KEY;
-  
-  console.log("Checking API key sources:", {
-    processEnv: !!process.env.GEMINI_API_KEY,
-    expoConfig: !!Constants.expoConfig?.extra?.GEMINI_API_KEY,
-    manifest2: !!Constants.manifest2?.extra?.expoClient?.extra?.GEMINI_API_KEY,
-  });
   
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY is not configured. Please add it to your secrets.");
@@ -41,8 +35,14 @@ export async function transcribeAndSummarizeAudio(
   readingLevel?: number
 ): Promise<TranscriptionResult> {
   try {
+    if (Platform.OS === "web") {
+      throw new Error(
+        "Audio transcription is not available on web. Please use the Expo Go app on your phone to record and transcribe visits."
+      );
+    }
+
     const audioBase64 = await FileSystem.readAsStringAsync(audioUri, {
-      encoding: "base64",
+      encoding: FileSystem.EncodingType.Base64,
     });
 
     const transcriptionContents = [

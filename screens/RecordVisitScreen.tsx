@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, StyleSheet, Pressable, TextInput, Alert, ScrollView, ActivityIndicator } from "react-native";
+import { View, StyleSheet, Pressable, TextInput, Alert, ScrollView, ActivityIndicator, Platform } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Feather } from "@expo/vector-icons";
@@ -360,14 +360,20 @@ export default function RecordVisitScreen() {
           isProcessing: false,
         });
       } catch (error) {
-        console.error("Failed to process audio:", error);
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        console.error("Failed to process audio:", errorMessage);
         updateVisit(visitId, {
           isProcessing: false,
         });
         setProcessingMode(false);
+        
+        const isWebLimitation = Platform.OS === "web" || errorMessage.includes("not available on web");
+        
         Alert.alert(
-          "Processing Failed",
-          "Could not transcribe and summarize the recording. The visit has been saved, but you may need to review the audio manually.",
+          isWebLimitation ? "Web Limitation" : "Processing Failed",
+          isWebLimitation 
+            ? "Audio transcription requires the Expo Go app on your phone. The visit has been saved without transcription. Please use the QR code to open InspirEd on your mobile device for full functionality."
+            : `Could not transcribe the recording: ${errorMessage}. The visit has been saved, but you may need to review the audio manually.`,
           [{ text: "OK", onPress: () => navigation.goBack() }]
         );
       }
