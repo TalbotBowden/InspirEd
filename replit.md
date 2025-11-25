@@ -66,18 +66,41 @@ Preferred communication style: Simple, everyday language.
 
 **Core Principle:** All AI-generated content must be grounded in administrator-vetted PDF sources to prevent medical misinformation.
 
+**AI Implementation:**
+
+**Gemini API (Google):**
+- **Primary AI Engine:** Google Gemini 2.5 Flash for audio transcription and medical summarization
+- **Two-Phase Processing:**
+  1. Audio transcription from m4a recordings using Gemini's native audio support
+  2. Medical summary generation from transcription text (no duplicate audio uploads)
+- **Reading Level Adaptation:** Summaries tailored to user's SMOG index (6th-12th grade)
+- **Medical Focus:** Prompts specialized for pediatric pulmonary care terminology
+- **Lazy Initialization:** API client created only when needed to prevent web environment crashes
+- **Multi-Source API Key Resolution:** Supports process.env, expoConfig.extra, and manifest2 fallback for production builds
+- **Error Handling:** User-facing alerts when processing fails, non-blocking save flow
+
+**OpenAI API (Planned):**
+- **Structured Extraction Only:** Parses Gemini transcriptions to extract:
+  - Key points (bullet list of important information)
+  - Diagnoses (medical conditions mentioned)
+  - Action items (treatment steps, medication changes)
+  - Medical terms (with plain-language explanations)
+- **No Summary Generation:** Gemini summary is authoritative source
+- **Typed Interface:** VisitExtraction type ensures data integrity
+
 **AI Features:**
 1. **Visit Summarization:**
-   - Processes recorded audio transcripts
-   - Generates summaries adapted to user's reading level (6th-12th grade SMOG index)
-   - Extracts key points, diagnoses, action items, and medical term explanations
+   - Gemini transcribes and summarizes medical visits in real-time
+   - Summaries adapted to parent's reading level (6th-12th grade SMOG index)
+   - Medical terminology explained in accessible language
+   - Background processing doesn't block app navigation
 
-2. **Contextual Q&A:**
+2. **Contextual Q&A (Planned):**
    - Visit-specific chat for clarifying questions
    - Responses cite PDF sources when available
    - Explicitly states when information is not found in trusted sources
 
-3. **Education Chat:**
+3. **Education Chat (Planned):**
    - General medical questions answered from PDF knowledge base
    - Encourages consultation with doctors for specific medical advice
 
@@ -125,16 +148,33 @@ Preferred communication style: Simple, everyday language.
 - Quality settings (High/Medium) for storage management
 
 **Audio Workflow:**
-1. User records visit audio
-2. Audio saved locally with metadata
-3. Transcription service processes audio (backend)
-4. AI generates summary adapted to reading level
-5. Summary stored and displayed with citations
+1. User records visit audio (expo-av with pause/resume support)
+2. Audio saved locally as m4a with metadata (doctor name, date, duration)
+3. Visit immediately saved to AsyncStorage (parents can navigate away)
+4. Background processing begins:
+   - Gemini API transcribes audio from base64-encoded m4a
+   - Gemini generates medical summary from transcription
+   - OpenAI extracts structured data (key points, diagnoses, actions, terms)
+5. Visit updated asynchronously with transcription, summary, and extracted insights
+6. User notified via alert if processing fails
 
 **Current Implementation:**
-- Mock transcription and summarization (placeholder for backend)
-- Local audio URI storage
-- Processing state indicators
+- **Production-Ready Gemini Integration:**
+  - Real-time audio transcription using Gemini 2.5 Flash
+  - Medical-focused summary generation with reading level adaptation
+  - Efficient two-phase processing (transcribe once, summarize from text)
+  - Proper error handling with user feedback
+- **expo-av Audio Recording:**
+  - Full pause/resume/stop controls
+  - High-quality m4a output
+  - Migration to expo-audio planned when pause/resume parity achieved
+- **Mock OpenAI Extraction:**
+  - Placeholder implementation for structured data extraction
+  - Typed VisitExtraction interface ready for real API integration
+- **AsyncStorage Persistence:**
+  - Immediate visit save (non-blocking)
+  - Background AI processing updates
+  - Legacy data compatibility (transcription field defaults to null)
 
 ### Educational Content System
 
@@ -188,11 +228,24 @@ Preferred communication style: Simple, everyday language.
 - **ESLint 9 + Prettier:** Code quality and formatting
 - **Babel Module Resolver:** Path aliasing
 
+### AI & Media Processing
+- **@google/genai 1.5.0:** Gemini API client for audio transcription and summarization
+- **Expo AV:** Audio recording with pause/resume (deprecated in SDK 54, migration to expo-audio planned)
+- **Expo FileSystem:** Base64 encoding for audio upload to Gemini
+
+### Active Integrations
+- **Gemini API (Google):** Production audio transcription and medical summarization
+  - Requires GEMINI_API_KEY secret (stored in Replit secrets)
+  - Two-phase processing: transcription → summary
+  - Reading level adaptation for parent accessibility
+  - Error handling with user notifications
+
 ### Planned Integrations
-- **OpenAI API:** Text summarization and Q&A generation (mock implementation exists)
-- **Audio Transcription Service:** Convert recordings to text
+- **OpenAI API:** Structured data extraction from transcriptions (mock exists)
+  - Key points, diagnoses, actions, medical term definitions
+  - Typed VisitExtraction interface ready for integration
 - **Vector Database:** Semantic search over PDF content (Pinecone, Weaviate, or similar)
-- **Authentication Provider:** Admin user management
+- **Authentication Provider:** Admin user management for PDF source curation
 - **Cloud Storage:** Backup for recordings and user data
 
 ### Platform-Specific
