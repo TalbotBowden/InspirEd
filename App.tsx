@@ -19,6 +19,7 @@ function AppContent() {
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
   const { isLoading, onboardingCompleted } = useAppContext();
   const prevStateRef = useRef({ isLoading, onboardingCompleted });
+  const hasInitializedRef = useRef(false);
 
   useEffect(() => {
     const prevState = prevStateRef.current;
@@ -28,9 +29,19 @@ function AppContent() {
 
     if (hasChanged && navigationRef.current) {
       let routeName: string;
-      if (isLoading) routeName = "Loading";
-      else if (!onboardingCompleted) routeName = "Onboarding";
-      else routeName = "Main";
+      
+      if (isLoading) {
+        routeName = "Loading";
+      } else if (!hasInitializedRef.current) {
+        // First load: skip onboarding for testing, go straight to Main
+        hasInitializedRef.current = true;
+        routeName = "Main";
+      } else if (prevState.onboardingCompleted && !onboardingCompleted) {
+        // User clicked "Redo Setup" - go to Onboarding
+        routeName = "Onboarding";
+      } else {
+        routeName = "Main";
+      }
 
       navigationRef.current.reset({
         index: 0,
