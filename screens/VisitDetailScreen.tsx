@@ -4,7 +4,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { ScreenScrollView } from "@/components/ScreenScrollView";
 import { Button } from "@/components/Button";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { useAppContext } from "@/context/AppContext";
@@ -34,11 +34,11 @@ export default function VisitDetailScreen() {
       <View style={styles.container}>
         <ThemedView style={[styles.card, { backgroundColor: theme.backgroundSecondary }]}>
           <View style={styles.cardHeader}>
-            <MaterialIcons name="headphones" size={24} color={theme.primary} />
+            <Ionicons name="headset" size={24} color={theme.primary} />
             <ThemedText style={styles.cardTitle}>Recording</ThemedText>
           </View>
           <Button onPress={() => {}}>
-            <MaterialIcons name="play-arrow" size={20} color="white" style={{ marginRight: Spacing.sm }} />
+            <Ionicons name="play" size={20} color="white" style={{ marginRight: Spacing.sm }} />
             Play Recording
           </Button>
         </ThemedView>
@@ -46,7 +46,7 @@ export default function VisitDetailScreen() {
         {visit.summary && (
           <ThemedView style={[styles.card, { backgroundColor: theme.backgroundSecondary }]}>
             <View style={styles.cardHeader}>
-              <MaterialIcons name="description" size={24} color={theme.primary} />
+              <Ionicons name="document-text" size={24} color={theme.primary} />
               <ThemedText style={styles.cardTitle}>Visit Summary</ThemedText>
             </View>
             <ThemedText style={styles.summaryText}>{visit.summary}</ThemedText>
@@ -81,7 +81,7 @@ export default function VisitDetailScreen() {
             </ThemedText>
             {visit.actions.map((action, index) => (
               <View key={index} style={styles.listItem}>
-                <MaterialIcons name="check-circle" size={16} color={theme.success} />
+                <Ionicons name="checkmark-circle" size={16} color={theme.success} />
                 <ThemedText style={styles.listText}>{action}</ThemedText>
               </View>
             ))}
@@ -103,7 +103,7 @@ export default function VisitDetailScreen() {
         )}
 
         <Button onPress={() => navigation.navigate("Chat", { visitId: visit.id })}>
-          <MaterialIcons name="chat" size={20} color="white" style={{ marginRight: Spacing.sm }} />
+          <Ionicons name="chatbubble" size={20} color="white" style={{ marginRight: Spacing.sm }} />
           Ask Questions About This Visit
         </Button>
       </View>

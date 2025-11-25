@@ -4,7 +4,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { ScreenScrollView } from "@/components/ScreenScrollView";
 import { Button } from "@/components/Button";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { useAppContext, LearningModule, Message } from "@/context/AppContext";
@@ -61,7 +61,7 @@ export default function EducationScreen() {
       <ScreenScrollView>
         <View style={styles.container}>
           <Pressable onPress={() => setShowChat(false)} style={styles.backButton}>
-            <MaterialIcons name="arrow-back" size={24} color={theme.primary} />
+            <Ionicons name="arrow-back" size={24} color={theme.primary} />
             <ThemedText style={{ color: theme.primary, fontSize: 16, fontWeight: "600" }}>
               Back to Learning
             </ThemedText>
@@ -69,7 +69,7 @@ export default function EducationScreen() {
 
           <ThemedView style={[styles.card, { backgroundColor: theme.backgroundSecondary }]}>
             <View style={styles.cardHeader}>
-              <MaterialIcons name="chat" size={24} color={theme.accent} />
+              <Ionicons name="chatbubble" size={24} color={theme.accent} />
               <ThemedText style={styles.cardTitle}>AI Learning Assistant</ThemedText>
             </View>
             <ThemedText style={[styles.helperText, { color: theme.textSecondary }]}>
@@ -118,7 +118,7 @@ export default function EducationScreen() {
               maxLength={500}
             />
             <Button onPress={handleAskQuestion} disabled={!inputText.trim() || isLoading}>
-              <MaterialIcons name="send" size={20} color="white" />
+              <Ionicons name="send" size={20} color="white" />
             </Button>
           </ThemedView>
         </View>
@@ -159,7 +159,7 @@ export default function EducationScreen() {
           onPress={() => setShowChat(true)}
           style={{ backgroundColor: theme.accent }}
         >
-          <MaterialIcons name="chat" size={20} color="white" style={{ marginRight: Spacing.sm }} />
+          <Ionicons name="chatbubble" size={20} color="white" style={{ marginRight: Spacing.sm }} />
           Ask AI Learning Assistant
         </Button>
 
@@ -224,7 +224,7 @@ function ModuleCard({ module, onPress }: { module: LearningModule; onPress: () =
         </View>
         {module.completed && (
           <View style={[styles.completedBadge, { backgroundColor: theme.success }]}>
-            <MaterialIcons name="check" size={16} color="white" />
+            <Ionicons name="checkmark" size={16} color="white" />
           </View>
         )}
       </View>
@@ -242,7 +242,7 @@ function ModuleCard({ module, onPress }: { module: LearningModule; onPress: () =
             </ThemedText>
           </View>
           <View style={styles.durationContainer}>
-            <MaterialIcons name="schedule" size={14} color={theme.textSecondary} />
+            <Ionicons name="time-outline" size={14} color={theme.textSecondary} />
             <ThemedText style={[styles.durationText, { color: theme.textSecondary }]}>
               {module.duration}
             </ThemedText>

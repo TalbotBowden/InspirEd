@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { Pressable, StyleSheet } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing } from "@/constants/theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -64,7 +64,7 @@ export function FloatingActionButton({ onPress, showBounce = false }: FloatingAc
           },
         ]}
       >
-        <MaterialIcons name="mic" size={28} color="white" />
+        <Ionicons name="mic" size={28} color="white" />
       </Pressable>
     </Animated.View>
   );

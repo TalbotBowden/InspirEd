@@ -9,7 +9,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import type { ProfileStackParamList } from "@/navigation/ProfileStackNavigator";
 import { useAppContext } from "@/context/AppContext";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 
 type ProfileScreenProps = {
   navigation: NativeStackNavigationProp<ProfileStackParamList, "Profile">;
@@ -55,7 +55,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
 
         {isAdmin && (
           <Button onPress={() => navigation.navigate("AdminSources")}>
-            <MaterialIcons name="description" size={20} color="white" style={{ marginRight: Spacing.sm }} />
+            <Ionicons name="document-text" size={20} color="white" style={{ marginRight: Spacing.sm }} />
             Manage Trusted Sources
           </Button>
         )}
@@ -71,7 +71,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
               },
             ]}
           >
-            <MaterialIcons name="shield" size={16} color={isAdmin ? "white" : theme.textSecondary} />
+            <Ionicons name="shield-checkmark" size={16} color={isAdmin ? "white" : theme.textSecondary} />
             <ThemedText style={{ color: isAdmin ? "white" : theme.textSecondary, fontSize: 12 }}>
               {isAdmin ? "Admin Mode" : "Enable Admin"}
             </ThemedText>

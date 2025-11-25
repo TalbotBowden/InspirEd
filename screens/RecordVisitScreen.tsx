@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { View, StyleSheet, Pressable, TextInput, Alert, ScrollView, ActivityIndicator, Platform } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { useAppContext } from "@/context/AppContext";
@@ -439,7 +439,7 @@ export default function RecordVisitScreen() {
           ) : (
             <View style={styles.resultsContainer}>
               <View style={styles.resultHeader}>
-                <MaterialIcons name="check-circle" size={48} color="white" />
+                <Ionicons name="checkmark-circle" size={48} color="white" />
                 <ThemedText style={styles.resultsTitle}>Visit Processed Successfully</ThemedText>
               </View>
 
@@ -483,8 +483,8 @@ export default function RecordVisitScreen() {
                 { backgroundColor: theme.accent },
               ]}
             >
-              <MaterialIcons
-                name="headphones"
+              <Ionicons
+                name="headset"
                 size={48}
                 color="white"
               />
@@ -530,7 +530,7 @@ export default function RecordVisitScreen() {
               onPress={handlePlayPause}
               style={[styles.recordButton, { backgroundColor: theme.accent }]}
             >
-              <MaterialIcons name={isPlaying ? "pause" : "play-arrow"} size={32} color="white" />
+              <Ionicons name={isPlaying ? "pause" : "play"} size={32} color="white" />
             </Pressable>
           </View>
 
@@ -539,14 +539,14 @@ export default function RecordVisitScreen() {
               onPress={handleReRecord}
               style={[styles.reviewButton, { backgroundColor: "rgba(255,255,255,0.2)" }]}
             >
-              <MaterialIcons name="replay" size={20} color="white" />
+              <Ionicons name="refresh" size={20} color="white" />
               <ThemedText style={styles.reviewButtonText}>Re-record</ThemedText>
             </Pressable>
             <Pressable
               onPress={handleSaveVisit}
               style={[styles.reviewButton, { backgroundColor: "white" }]}
             >
-              <MaterialIcons name="check" size={20} color={theme.primary} />
+              <Ionicons name="checkmark" size={20} color={theme.primary} />
               <ThemedText style={[styles.reviewButtonText, { color: theme.primary }]}>
                 Save Visit
               </ThemedText>
@@ -564,7 +564,7 @@ export default function RecordVisitScreen() {
                 },
               ]}
             >
-              <MaterialIcons
+              <Ionicons
                 name="mic"
                 size={48}
                 color="white"
@@ -592,7 +592,7 @@ export default function RecordVisitScreen() {
                 onPress={handleRecord}
                 style={[styles.recordButton, { backgroundColor: "#FF6B6B" }]}
               >
-                <MaterialIcons name="fiber-manual-record" size={32} color="white" />
+                <Ionicons name="radio-button-on" size={32} color="white" />
               </Pressable>
             ) : (
               <>
@@ -600,13 +600,13 @@ export default function RecordVisitScreen() {
                   onPress={handlePause}
                   style={[styles.controlButton, { backgroundColor: "rgba(255,255,255,0.3)" }]}
                 >
-                  <MaterialIcons name={isPaused ? "play-arrow" : "pause"} size={24} color="white" />
+                  <Ionicons name={isPaused ? "play" : "pause"} size={24} color="white" />
                 </Pressable>
                 <Pressable
                   onPress={handleStop}
                   style={[styles.controlButton, { backgroundColor: theme.accent }]}
                 >
-                  <MaterialIcons name="check" size={24} color="white" />
+                  <Ionicons name="checkmark" size={24} color="white" />
                 </Pressable>
               </>
             )}
@@ -702,9 +702,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
   },
+  reviewButtons: {
+    flexDirection: "row",
+    gap: Spacing.md,
+    marginTop: Spacing.xl,
+  },
+  reviewButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+  },
+  reviewButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
   progressContainer: {
     width: "100%",
-    marginBottom: Spacing["2xl"],
+    marginBottom: Spacing.xl,
   },
   progressBar: {
     height: 4,
@@ -724,25 +742,6 @@ const styles = StyleSheet.create({
   progressTimeText: {
     color: "rgba(255,255,255,0.8)",
     fontSize: 12,
-  },
-  reviewButtons: {
-    flexDirection: "row",
-    gap: Spacing.md,
-    width: "100%",
-  },
-  reviewButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: Spacing.sm,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
-  },
-  reviewButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
   },
   processingContainer: {
     flex: 1,
@@ -793,13 +792,14 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
   },
   resultText: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 14,
+    lineHeight: 20,
   },
   viewHistoryButton: {
+    alignItems: "center",
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.md,
-    alignItems: "center",
+    marginTop: Spacing.lg,
   },
   viewHistoryButtonText: {
     fontSize: 16,

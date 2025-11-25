@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { StyleSheet, View, ActivityIndicator, Platform } from "react-native";
 import { NavigationContainer, NavigationContainerRef } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -6,7 +6,8 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
-import { useFonts } from "expo-font";
+import { Ionicons } from "@expo/vector-icons";
+import * as Font from "expo-font";
 
 import RootNavigator from "@/navigation/RootNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -51,23 +52,24 @@ function AppContent() {
 }
 
 export default function App() {
-  const [fontsLoaded, fontError] = useFonts({
-    MaterialIcons: require("@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/MaterialIcons.ttf"),
-    "Material Icons": require("@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/MaterialIcons.ttf"),
-  });
-
-  const onLayoutRootView = useCallback(async () => {
-    if (fontsLoaded || fontError) {
-      console.log("Fonts loaded:", fontsLoaded, "Error:", fontError, "Platform:", Platform.OS);
-      await SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, fontError]);
+  const [fontsLoaded, setFontsLoaded] = useState(false);
 
   useEffect(() => {
-    onLayoutRootView();
-  }, [onLayoutRootView]);
+    async function loadFonts() {
+      try {
+        await Font.loadAsync(Ionicons.font);
+        console.log("Ionicons font loaded successfully. Platform:", Platform.OS);
+      } catch (error) {
+        console.log("Font loading error:", error, "Platform:", Platform.OS);
+      } finally {
+        setFontsLoaded(true);
+        await SplashScreen.hideAsync();
+      }
+    }
+    loadFonts();
+  }, []);
 
-  if (!fontsLoaded && !fontError) {
+  if (!fontsLoaded) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#4DB6AC" />
