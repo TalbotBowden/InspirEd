@@ -17,7 +17,7 @@ SplashScreen.preventAutoHideAsync();
 
 function AppContent() {
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
-  const { isLoading, onboardingCompleted } = useAppContext();
+  const { isLoading, onboardingCompleted, completeOnboarding } = useAppContext();
   const prevStateRef = useRef({ isLoading, onboardingCompleted });
   const hasInitializedRef = useRef(false);
 
@@ -36,6 +36,10 @@ function AppContent() {
         // First load: skip onboarding for testing, go straight to Main
         hasInitializedRef.current = true;
         routeName = "Main";
+        // Mark as completed so "Redo Setup" can properly reset it
+        if (!onboardingCompleted) {
+          completeOnboarding();
+        }
       } else if (prevState.onboardingCompleted && !onboardingCompleted) {
         // User clicked "Redo Setup" - go to Onboarding
         routeName = "Onboarding";
@@ -50,7 +54,7 @@ function AppContent() {
 
       prevStateRef.current = { isLoading, onboardingCompleted };
     }
-  }, [isLoading, onboardingCompleted]);
+  }, [isLoading, onboardingCompleted, completeOnboarding]);
 
   return (
     <NavigationContainer ref={navigationRef}>
