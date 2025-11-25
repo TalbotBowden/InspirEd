@@ -1,14 +1,19 @@
-import React, { useEffect, useRef } from "react";
-import { StyleSheet } from "react-native";
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import { StyleSheet, View, ActivityIndicator } from "react-native";
 import { NavigationContainer, NavigationContainerRef } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import * as SplashScreen from "expo-splash-screen";
+import { Feather } from "@expo/vector-icons";
+import * as Font from "expo-font";
 
 import RootNavigator from "@/navigation/RootNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppProvider, useAppContext } from "@/context/AppContext";
+
+SplashScreen.preventAutoHideAsync();
 
 function AppContent() {
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
@@ -47,6 +52,33 @@ function AppContent() {
 }
 
 export default function App() {
+  const [fontsLoaded, setFontsLoaded] = useState(false);
+
+  useEffect(() => {
+    async function loadFonts() {
+      try {
+        await Font.loadAsync({
+          ...Feather.font,
+        });
+        setFontsLoaded(true);
+        await SplashScreen.hideAsync();
+      } catch (error) {
+        console.error("Error loading fonts:", error);
+        setFontsLoaded(true);
+        await SplashScreen.hideAsync();
+      }
+    }
+    loadFonts();
+  }, []);
+
+  if (!fontsLoaded) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4DB6AC" />
+      </View>
+    );
+  }
+
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
@@ -66,5 +98,11 @@ export default function App() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
   },
 });
