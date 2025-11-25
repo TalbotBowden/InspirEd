@@ -69,7 +69,7 @@ export default function HomeScreen() {
                 icon="document"
                 title="Recent Visit"
                 subtitle={new Date(lastVisit.date).toLocaleDateString()}
-                onPress={() => navigation.navigate("HistoryTab")}
+                onPress={() => navigation.navigate("HistoryTab", { screen: "VisitDetail", params: { visitId: lastVisit.id } })}
               />
 
               <View style={styles.statsContainer}>
