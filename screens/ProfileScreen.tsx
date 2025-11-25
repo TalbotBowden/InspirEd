@@ -30,11 +30,11 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
     resetOnboarding,
   } = useAppContext();
 
-  const getReadingLevelLabel = (level: number): string => {
-    if (level <= 6) return "Simple (6th grade)";
-    if (level <= 8) return "Standard (8th grade)";
-    if (level <= 10) return "Detailed (10th grade)";
-    return "Advanced (12th grade)";
+  const getStyleLabel = (level: number): string => {
+    if (level <= 6) return "Essential";
+    if (level <= 8) return "Balanced";
+    if (level <= 10) return "Detailed";
+    return "Comprehensive";
   };
 
   return (
@@ -62,12 +62,12 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
           <SettingToggle label="Auto-save summaries" value={autoSave} onValueChange={setAutoSave} />
         </SettingSection>
 
-        <SettingSection title="Personalization">
+        <SettingSection title="Communication Style">
           <View style={styles.readingLevelRow}>
             <View>
-              <ThemedText>Reading Level</ThemedText>
+              <ThemedText>Summary Detail</ThemedText>
               <ThemedText style={[styles.readingLevelValue, { color: theme.textSecondary }]}>
-                {getReadingLevelLabel(readingLevel)}
+                {getStyleLabel(readingLevel)}
               </ThemedText>
             </View>
             <Pressable
