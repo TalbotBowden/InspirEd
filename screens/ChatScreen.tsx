@@ -9,7 +9,7 @@ import { useAppContext, Message } from "@/context/AppContext";
 import { useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
-import { askQuestionAboutVisit } from "@/utils/openai";
+import { askQuestionWithGemini } from "@/utils/gemini";
 
 const TAB_BAR_HEIGHT = 80;
 
@@ -41,9 +41,16 @@ export default function ChatScreen() {
     setInputText("");
     setIsLoading(true);
 
-    const response = await askQuestionAboutVisit(
+    const response = await askQuestionWithGemini(
       userMessage.text,
-      visit?.summary || "",
+      {
+        summary: visit?.summary,
+        transcription: visit?.transcription,
+        keyPoints: visit?.keyPoints,
+        diagnoses: visit?.diagnoses,
+        actions: visit?.actions,
+        medicalTerms: visit?.medicalTerms,
+      },
       readingLevel
     );
 

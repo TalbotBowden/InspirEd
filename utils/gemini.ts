@@ -111,3 +111,86 @@ ${transcription}`,
     throw new Error(`Failed to process audio: ${errorMessage}`);
   }
 }
+
+export async function askQuestionWithGemini(
+  question: string,
+  visitContext: {
+    summary?: string | null;
+    transcription?: string | null;
+    keyPoints?: string[];
+    diagnoses?: string[];
+    actions?: string[];
+    medicalTerms?: { term: string; explanation: string }[];
+  },
+  readingLevel: number = 8
+): Promise<string> {
+  try {
+    const contextParts: string[] = [];
+    
+    if (visitContext.summary) {
+      contextParts.push(`VISIT SUMMARY:\n${visitContext.summary}`);
+    }
+    
+    if (visitContext.transcription) {
+      contextParts.push(`FULL TRANSCRIPTION:\n${visitContext.transcription}`);
+    }
+    
+    if (visitContext.keyPoints && visitContext.keyPoints.length > 0) {
+      contextParts.push(`KEY POINTS:\n${visitContext.keyPoints.map(p => `- ${p}`).join('\n')}`);
+    }
+    
+    if (visitContext.diagnoses && visitContext.diagnoses.length > 0) {
+      contextParts.push(`DIAGNOSES:\n${visitContext.diagnoses.map(d => `- ${d}`).join('\n')}`);
+    }
+    
+    if (visitContext.actions && visitContext.actions.length > 0) {
+      contextParts.push(`ACTION ITEMS:\n${visitContext.actions.map(a => `- ${a}`).join('\n')}`);
+    }
+    
+    if (visitContext.medicalTerms && visitContext.medicalTerms.length > 0) {
+      contextParts.push(`MEDICAL TERMS EXPLAINED:\n${visitContext.medicalTerms.map(t => `- ${t.term}: ${t.explanation}`).join('\n')}`);
+    }
+
+    const context = contextParts.join('\n\n');
+    
+    if (!context.trim()) {
+      return "I don't have enough information about this visit to answer your question. Please make sure the visit has been transcribed and summarized first.";
+    }
+
+    const prompt = `You are a helpful medical information assistant for parents of children with chronic pulmonary conditions. A parent has asked a question about a recent doctor visit.
+
+IMPORTANT GUIDELINES:
+1. Answer based ONLY on the visit information provided below
+2. Use clear, simple language appropriate for a ${readingLevel}th grade reading level
+3. Be empathetic and supportive - these parents are managing a child's chronic condition
+4. If the answer isn't in the visit notes, say so honestly and suggest they ask their doctor
+5. Never give specific medical advice - always encourage discussing important decisions with their healthcare provider
+6. Explain any medical terms in simple language
+7. Keep your response concise but complete
+
+VISIT INFORMATION:
+${context}
+
+PARENT'S QUESTION:
+${question}
+
+Please provide a helpful, accurate response:`;
+
+    const response = await getAI().models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [prompt],
+    });
+
+    const answer = response.text || "";
+    
+    if (!answer) {
+      return "I'm sorry, I couldn't generate a response. Please try asking your question again.";
+    }
+
+    return answer;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Gemini Q&A error:", errorMessage);
+    return "I'm having trouble answering your question right now. Please try again in a moment.";
+  }
+}
