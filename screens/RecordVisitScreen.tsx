@@ -667,6 +667,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "white",
     marginBottom: Spacing["2xl"],
+    lineHeight: 64,
+    includeFontPadding: false,
   },
   inputCard: {
     width: "100%",
