@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, StyleSheet, Pressable, TextInput, Alert } from "react-native";
+import { View, StyleSheet, Pressable, TextInput, Alert, ScrollView, ActivityIndicator } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Feather } from "@expo/vector-icons";
@@ -53,6 +53,11 @@ export default function RecordVisitScreen() {
   const [playbackPosition, setPlaybackPosition] = useState(0);
   const [playbackDuration, setPlaybackDuration] = useState(0);
   const [recordedUri, setRecordedUri] = useState<string | null>(null);
+  
+  const [processingMode, setProcessingMode] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState<"transcribing" | "summarizing" | "complete">("transcribing");
+  const [transcriptionResult, setTranscriptionResult] = useState<string | null>(null);
+  const [summaryResult, setSummaryResult] = useState<string | null>(null);
   
   const recordingRef = useRef<Audio.Recording | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
@@ -306,6 +311,9 @@ export default function RecordVisitScreen() {
         setSound(null);
       }
 
+      setProcessingMode(true);
+      setProcessingStatus("transcribing");
+
       const visitId = Date.now().toString();
       const visit = {
         id: visitId,
@@ -323,46 +331,54 @@ export default function RecordVisitScreen() {
       };
       
       addVisit(visit);
-      navigation.goBack();
       
-      (async () => {
-        try {
-          const result = await transcribeAndSummarizeAudio(
-            recordedUri,
-            "audio/m4a",
-            readingLevel
-          );
-          
-          const aiExtraction = await generateVisitSummary(
-            result.transcription,
-            readingLevel
-          );
-          
-          updateVisit(visitId, {
-            transcription: result.transcription,
-            summary: result.summary,
-            keyPoints: aiExtraction.keyPoints,
-            diagnoses: aiExtraction.diagnoses,
-            actions: aiExtraction.actions,
-            medicalTerms: aiExtraction.medicalTerms,
-            isProcessing: false,
-          });
-        } catch (error) {
-          console.error("Failed to process audio:", error);
-          updateVisit(visitId, {
-            isProcessing: false,
-          });
-          Alert.alert(
-            "Processing Failed",
-            "Could not transcribe and summarize the recording. The visit has been saved, but you may need to review the audio manually.",
-            [{ text: "OK" }]
-          );
-        }
-      })();
+      try {
+        const result = await transcribeAndSummarizeAudio(
+          recordedUri,
+          "audio/m4a",
+          readingLevel
+        );
+        
+        setTranscriptionResult(result.transcription);
+        setProcessingStatus("summarizing");
+        
+        const aiExtraction = await generateVisitSummary(
+          result.transcription,
+          readingLevel
+        );
+        
+        setSummaryResult(result.summary);
+        setProcessingStatus("complete");
+        
+        updateVisit(visitId, {
+          transcription: result.transcription,
+          summary: result.summary,
+          keyPoints: aiExtraction.keyPoints,
+          diagnoses: aiExtraction.diagnoses,
+          actions: aiExtraction.actions,
+          medicalTerms: aiExtraction.medicalTerms,
+          isProcessing: false,
+        });
+      } catch (error) {
+        console.error("Failed to process audio:", error);
+        updateVisit(visitId, {
+          isProcessing: false,
+        });
+        setProcessingMode(false);
+        Alert.alert(
+          "Processing Failed",
+          "Could not transcribe and summarize the recording. The visit has been saved, but you may need to review the audio manually.",
+          [{ text: "OK", onPress: () => navigation.goBack() }]
+        );
+      }
     } catch (error) {
       console.error("Failed to save visit:", error);
       Alert.alert("Error", "Could not save the visit. Please try again.");
     }
+  };
+  
+  const handleViewInHistory = () => {
+    navigation.goBack();
   };
 
   const formatPlaybackTime = (millis: number) => {
@@ -377,16 +393,78 @@ export default function RecordVisitScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.primary }]}>
       <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
-        <Pressable onPress={handleCancel} style={styles.headerButton}>
-          <ThemedText style={styles.headerButtonText}>Cancel</ThemedText>
+        <Pressable 
+          onPress={handleCancel} 
+          style={styles.headerButton}
+          pointerEvents={processingMode ? "none" : "auto"}
+        >
+          <ThemedText style={styles.headerButtonText}>
+            {processingMode ? "" : "Cancel"}
+          </ThemedText>
         </Pressable>
         <ThemedText style={styles.headerTitle}>
-          {reviewMode ? "Review Recording" : "Recording Visit"}
+          {processingMode ? "Processing Visit" : reviewMode ? "Review Recording" : "Recording Visit"}
         </ThemedText>
         <View style={styles.headerButton} />
       </View>
 
-      {reviewMode ? (
+      {processingMode ? (
+        <ScrollView style={styles.processingContainer} contentContainerStyle={styles.processingContent}>
+          {processingStatus === "transcribing" ? (
+            <View style={styles.processingStatusContainer}>
+              <ActivityIndicator size="large" color="white" />
+              <ThemedText style={styles.processingTitle}>Transcribing your visit...</ThemedText>
+              <ThemedText style={styles.processingSubtitle}>
+                Converting your recording to text
+              </ThemedText>
+            </View>
+          ) : processingStatus === "summarizing" ? (
+            <View style={styles.processingStatusContainer}>
+              <ActivityIndicator size="large" color="white" />
+              <ThemedText style={styles.processingTitle}>Creating your summary...</ThemedText>
+              <ThemedText style={styles.processingSubtitle}>
+                Analyzing the visit and adapting to your reading level
+              </ThemedText>
+            </View>
+          ) : (
+            <View style={styles.resultsContainer}>
+              <View style={styles.resultHeader}>
+                <Feather name="check-circle" size={48} color="white" />
+                <ThemedText style={styles.resultsTitle}>Visit Processed Successfully</ThemedText>
+              </View>
+
+              {summaryResult ? (
+                <View style={styles.resultSection}>
+                  <ThemedText style={styles.resultLabel}>Summary</ThemedText>
+                  <ThemedView style={styles.resultCard}>
+                    <ThemedText style={styles.resultText}>{summaryResult}</ThemedText>
+                  </ThemedView>
+                </View>
+              ) : null}
+
+              {transcriptionResult ? (
+                <View style={styles.resultSection}>
+                  <ThemedText style={styles.resultLabel}>Transcription Preview</ThemedText>
+                  <ThemedView style={styles.resultCard}>
+                    <ThemedText style={styles.resultText} numberOfLines={6}>
+                      {transcriptionResult}
+                    </ThemedText>
+                  </ThemedView>
+                </View>
+              ) : null}
+
+              <Pressable
+                onPress={handleViewInHistory}
+                style={[styles.viewHistoryButton, { backgroundColor: "white" }]}
+              >
+                <ThemedText style={[styles.viewHistoryButtonText, { color: theme.primary }]}>
+                  View in History
+                </ThemedText>
+              </Pressable>
+            </View>
+          )}
+        </ScrollView>
+      ) : reviewMode ? (
         <View style={styles.content}>
           <View style={styles.waveformContainer}>
             <View
@@ -655,5 +733,75 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "white",
+  },
+  processingContainer: {
+    flex: 1,
+  },
+  processingContent: {
+    flexGrow: 1,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing["2xl"],
+  },
+  processingStatusContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: Spacing.xl,
+  },
+  processingTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "white",
+    textAlign: "center",
+    marginTop: Spacing.lg,
+  },
+  processingSubtitle: {
+    fontSize: 16,
+    color: "rgba(255,255,255,0.8)",
+    textAlign: "center",
+  },
+  resultsContainer: {
+    gap: Spacing["2xl"],
+  },
+  resultHeader: {
+    alignItems: "center",
+    gap: Spacing.lg,
+    marginBottom: Spacing.lg,
+  },
+  resultsTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "white",
+    textAlign: "center",
+  },
+  resultSection: {
+    gap: Spacing.md,
+  },
+  resultLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.9)",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  resultCard: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderRadius: BorderRadius.md,
+    padding: Spacing.lg,
+  },
+  resultText: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: "white",
+  },
+  viewHistoryButton: {
+    paddingVertical: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    alignItems: "center",
+    marginTop: Spacing.xl,
+  },
+  viewHistoryButtonText: {
+    fontSize: 18,
+    fontWeight: "700",
   },
 });
