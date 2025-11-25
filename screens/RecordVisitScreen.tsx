@@ -16,6 +16,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { generateVisitSummary } from "@/utils/openai";
+import { transcribeAndSummarizeAudio } from "@/utils/gemini";
 import { Audio } from "expo-av";
 
 /*
@@ -312,6 +313,7 @@ export default function RecordVisitScreen() {
         doctorName: doctorName || "Not specified",
         duration: seconds,
         audioUri: recordedUri,
+        transcription: null,
         summary: null,
         keyPoints: [],
         diagnoses: [],
@@ -323,13 +325,32 @@ export default function RecordVisitScreen() {
       addVisit(visit);
       navigation.goBack();
       
-      setTimeout(async () => {
-        const summary = await generateVisitSummary("Mock transcript", readingLevel);
-        updateVisit(visitId, {
-          ...summary,
-          isProcessing: false,
-        });
-      }, 3000);
+      (async () => {
+        try {
+          const result = await transcribeAndSummarizeAudio(
+            recordedUri,
+            "audio/m4a",
+            readingLevel
+          );
+          
+          const aiSummary = await generateVisitSummary(
+            result.transcription,
+            readingLevel
+          );
+          
+          updateVisit(visitId, {
+            transcription: result.transcription,
+            summary: result.summary,
+            ...aiSummary,
+            isProcessing: false,
+          });
+        } catch (error) {
+          console.error("Failed to process audio:", error);
+          updateVisit(visitId, {
+            isProcessing: false,
+          });
+        }
+      })();
     } catch (error) {
       console.error("Failed to save visit:", error);
       Alert.alert("Error", "Could not save the visit. Please try again.");

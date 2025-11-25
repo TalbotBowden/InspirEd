@@ -7,6 +7,7 @@ export type Visit = {
   doctorName: string;
   duration: number;
   audioUri: string;
+  transcription: string | null;
   summary: string | null;
   keyPoints: string[];
   diagnoses: string[];
