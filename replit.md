@@ -199,6 +199,28 @@ Preferred communication style: Simple, everyday language.
 - Progress tracking with completion states
 - Topic tagging for discoverability
 
+**AI-Generated Lessons (November 2025):**
+- **Dynamic Content Generation:**
+  - Lessons generated on-demand using Gemini API
+  - Adapted to user's communication style preference
+  - Structured format: Introduction → Sections with key takeaways → Summary → Practical tips
+- **Section-by-Section Navigation:**
+  - Progress bar showing lesson completion
+  - Previous/Next navigation with progress tracking
+  - "Ask a Question" button for in-lesson Q&A
+- **Module-Specific Chat:**
+  - Context-aware Q&A within each lesson
+  - Maintains conversation history during lesson
+  - Uses ScreenKeyboardAwareScrollView for proper keyboard handling
+- **Error Handling:**
+  - Graceful fallback content if generation fails
+  - Clear retry messaging with helpful alternatives
+  - Non-blocking - users can navigate away and return
+- **Medical Disclaimer:**
+  - Clear notice that content is AI-generated for informational purposes
+  - Encourages consultation with healthcare team for medical decisions
+  - Note: PDF source grounding planned for future implementation
+
 **Education Chat:**
 - Separate from visit-specific Q&A
 - Broader medical education questions
