@@ -1,9 +1,10 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Image } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
-import { useTheme } from "@/hooks/useTheme";
 import { Colors } from "@/constants/theme";
+
+const InspiredLogo = require("@/assets/images/inspired-logo.png");
 
 interface HeaderTitleProps {
   title: string;
@@ -11,42 +12,32 @@ interface HeaderTitleProps {
 }
 
 export function HeaderTitle({ title, showTagline = false }: HeaderTitleProps) {
-  const { theme } = useTheme();
-  
   return (
     <View style={styles.container}>
-      <View style={styles.titleRow}>
-        <ThemedText style={styles.title}>{title}</ThemedText>
-      </View>
-      {showTagline ? (
-        <ThemedText style={[styles.tagline, { color: theme.textSecondary }]}>
-          Learn to Empower. Empower to Hope.
-        </ThemedText>
-      ) : null}
+      <Image
+        source={InspiredLogo}
+        style={styles.logo}
+        resizeMode="contain"
+      />
+      <ThemedText style={styles.title}>{title}</ThemedText>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: "column",
-    alignItems: "flex-start",
-    justifyContent: "center",
-  },
-  titleRow: {
     flexDirection: "row",
     alignItems: "center",
   },
-  title: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: Colors.light.primary,
-    letterSpacing: -0.3,
+  logo: {
+    width: 44,
+    height: 44,
+    marginRight: 12,
   },
-  tagline: {
-    fontSize: 11,
-    fontWeight: "500",
-    marginTop: 1,
-    letterSpacing: 0.2,
+  title: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: Colors.light.text,
+    letterSpacing: -0.3,
   },
 });
