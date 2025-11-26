@@ -1,11 +1,9 @@
 import React from "react";
-import { View, StyleSheet, Image } from "react-native";
+import { View, StyleSheet } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing } from "@/constants/theme";
-
-const InspiredLogo = require("@/assets/images/inspired-logo.png");
+import { Colors } from "@/constants/theme";
 
 interface HeaderTitleProps {
   title: string;
@@ -17,44 +15,38 @@ export function HeaderTitle({ title, showTagline = false }: HeaderTitleProps) {
   
   return (
     <View style={styles.container}>
-      <Image
-        source={InspiredLogo}
-        style={styles.icon}
-        resizeMode="contain"
-      />
-      <View style={styles.textContainer}>
+      <View style={styles.titleRow}>
         <ThemedText style={styles.title}>{title}</ThemedText>
-        {showTagline ? (
-          <ThemedText style={[styles.tagline, { color: theme.textSecondary }]}>
-            Learn to Empower
-          </ThemedText>
-        ) : null}
       </View>
+      {showTagline ? (
+        <ThemedText style={[styles.tagline, { color: theme.textSecondary }]}>
+          Learn to Empower. Empower to Hope.
+        </ThemedText>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flexDirection: "column",
+    alignItems: "flex-start",
+    justifyContent: "center",
+  },
+  titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-start",
-  },
-  icon: {
-    width: 32,
-    height: 32,
-    marginRight: Spacing.sm,
-  },
-  textContainer: {
-    flexDirection: "column",
   },
   title: {
-    fontSize: 17,
-    fontWeight: "600",
+    fontSize: 20,
+    fontWeight: "700",
+    color: Colors.light.primary,
+    letterSpacing: -0.3,
   },
   tagline: {
-    fontSize: 10,
-    fontWeight: "400",
-    marginTop: -2,
+    fontSize: 11,
+    fontWeight: "500",
+    marginTop: 1,
+    letterSpacing: 0.2,
   },
 });
