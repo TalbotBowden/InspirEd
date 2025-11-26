@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, View, TextInput, Platform, ActivityIndicator, Pressable, ScrollView as RNScrollView } from "react-native";
+import { StyleSheet, View, TextInput, Platform, ActivityIndicator, Pressable, ScrollView as RNScrollView, Image } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ThemedText } from "@/components/ThemedText";
@@ -10,6 +10,8 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { useAppContext } from "@/context/AppContext";
 import { analyzeReadingLevel } from "@/utils/textAnalysis";
+
+const InspiredLogo = require("@/assets/images/inspired-logo.png");
 
 const DEFAULT_READING_LEVEL = 8;
 
@@ -118,11 +120,12 @@ export default function OnboardingScreen() {
   if (step === -1) {
     return (
       <ScrollComponent {...scrollViewProps}>
-        <View style={styles.header}>
-          <ThemedText style={styles.title}>Welcome to InspirEd</ThemedText>
-          <ThemedText style={[styles.tagline, { color: theme.primary }]}>
-            Learn to Empower. Empower to Hope.
-          </ThemedText>
+        <View style={styles.logoContainer}>
+          <Image 
+            source={InspiredLogo} 
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </View>
 
         <ThemedView style={[styles.card, { backgroundColor: theme.backgroundSecondary }]}>
@@ -174,6 +177,12 @@ export default function OnboardingScreen() {
   if (showTransition) {
     return (
       <ThemedView style={styles.transitionContainer}>
+        <Image 
+          source={InspiredLogo} 
+          style={styles.transitionLogo}
+          resizeMode="contain"
+        />
+        
         <ActivityIndicator size="large" color={theme.primary} style={styles.spinner} />
         
         <ThemedText style={styles.transitionTitle}>
@@ -192,11 +201,13 @@ export default function OnboardingScreen() {
   return (
     <ScrollComponent {...scrollViewProps}>
       <View style={styles.header}>
-          <ThemedText style={styles.title}>{currentQuestion.title}</ThemedText>
-          <ThemedText style={[styles.tagline, { color: theme.primary }]}>
-            Learn to Empower. Empower to Hope.
-          </ThemedText>
-        </View>
+        <Image 
+          source={InspiredLogo} 
+          style={styles.headerLogo}
+          resizeMode="contain"
+        />
+        <ThemedText style={styles.title}>{currentQuestion.title}</ThemedText>
+      </View>
 
         <ThemedView style={[styles.card, { backgroundColor: theme.backgroundSecondary }]}>
           <ThemedText style={styles.prompt}>{currentQuestion.prompt}</ThemedText>
@@ -259,6 +270,25 @@ const styles = StyleSheet.create({
   container: {
     padding: Spacing.xl,
     gap: Spacing.xl,
+  },
+  logoContainer: {
+    alignItems: "center",
+    marginTop: Spacing.xl,
+    marginBottom: Spacing.md,
+  },
+  logo: {
+    width: 220,
+    height: 180,
+  },
+  headerLogo: {
+    width: 120,
+    height: 80,
+    marginBottom: Spacing.sm,
+  },
+  transitionLogo: {
+    width: 180,
+    height: 140,
+    marginBottom: Spacing.xl,
   },
   transitionContainer: {
     flex: 1,

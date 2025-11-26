@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, View, TextInput, Pressable, Alert, Platform } from "react-native";
+import { StyleSheet, View, TextInput, Pressable, Alert, Platform, Image } from "react-native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ScreenKeyboardAwareScrollView } from "@/components/ScreenKeyboardAwareScrollView";
 import { ThemedText } from "@/components/ThemedText";
@@ -10,6 +10,8 @@ import { Spacing, BorderRadius } from "@/constants/theme";
 import type { ProfileStackParamList } from "@/navigation/ProfileStackNavigator";
 import { useAppContext } from "@/context/AppContext";
 import { Icon } from "@/components/Icon";
+
+const InspiredLogo = require("@/assets/images/inspired-logo.png");
 
 type ProfileScreenProps = {
   navigation: NativeStackNavigationProp<ProfileStackParamList, "Profile">;
@@ -190,11 +192,19 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
         </View>
 
         <View style={styles.aboutSection}>
-          <ThemedText style={[styles.tagline, { color: theme.primary }]}>
-            Learn to Empower. Empower to Hope.
-          </ThemedText>
+          <Image 
+            source={InspiredLogo} 
+            style={styles.aboutLogo}
+            resizeMode="contain"
+          />
           <ThemedText style={[styles.version, { color: theme.textSecondary }]}>
             Version 1.0.0
+          </ThemedText>
+          <ThemedText style={[styles.copyright, { color: theme.textSecondary }]}>
+            Helping parents understand and manage
+          </ThemedText>
+          <ThemedText style={[styles.copyright, { color: theme.textSecondary }]}>
+            their child's pulmonary care journey
           </ThemedText>
         </View>
       </View>
@@ -323,16 +333,22 @@ const styles = StyleSheet.create({
   },
   aboutSection: {
     alignItems: "center",
-    gap: Spacing.sm,
+    gap: Spacing.xs,
     marginTop: Spacing.xl,
+    paddingBottom: Spacing.xl,
   },
-  tagline: {
-    fontSize: 14,
-    fontStyle: "italic",
-    textAlign: "center",
+  aboutLogo: {
+    width: 160,
+    height: 120,
+    marginBottom: Spacing.sm,
   },
   version: {
     fontSize: 12,
+    marginTop: Spacing.sm,
+  },
+  copyright: {
+    fontSize: 12,
+    textAlign: "center",
   },
   privacyCard: {
     borderRadius: BorderRadius.md,

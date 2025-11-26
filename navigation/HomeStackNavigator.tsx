@@ -24,7 +24,7 @@ export default function HomeStackNavigator() {
         name="Home"
         component={HomeScreen}
         options={{
-          headerTitle: () => <HeaderTitle title="InspirEd" />,
+          headerTitle: () => <HeaderTitle title="InspirEd" showTagline />,
         }}
       />
     </Stack.Navigator>
