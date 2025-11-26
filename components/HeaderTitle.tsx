@@ -1,13 +1,12 @@
 import React from "react";
-import { View, StyleSheet, Image } from "react-native";
+import { View, StyleSheet, Image, Text } from "react-native";
 
-import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/theme";
 
 const InspiredSymbol = require("@/assets/images/inspired-symbol.png");
 
 interface HeaderTitleProps {
-  title: string;
+  title?: string;
   showTagline?: boolean;
 }
 
@@ -19,7 +18,10 @@ export function HeaderTitle({ title, showTagline = false }: HeaderTitleProps) {
         style={styles.symbol}
         resizeMode="contain"
       />
-      <ThemedText style={styles.title}>{title}</ThemedText>
+      <Text style={styles.title}>
+        <Text style={styles.titleTeal}>Inspir</Text>
+        <Text style={styles.titleGreen}>Ed</Text>
+      </Text>
     </View>
   );
 }
@@ -37,7 +39,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: "700",
-    color: Colors.light.text,
     letterSpacing: -0.3,
+  },
+  titleTeal: {
+    color: Colors.light.primary,
+  },
+  titleGreen: {
+    color: Colors.light.accent,
   },
 });
