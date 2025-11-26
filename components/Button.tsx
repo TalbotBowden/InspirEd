@@ -85,8 +85,10 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: Spacing.xl,
   },
   buttonText: {
     fontWeight: "600",
+    lineHeight: 24,
   },
 });
