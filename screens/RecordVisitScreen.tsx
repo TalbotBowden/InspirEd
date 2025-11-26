@@ -148,31 +148,52 @@ export default function RecordVisitScreen() {
 
   const handleCancel = async () => {
     if (isRecording || seconds > 0) {
-      Alert.alert(
-        "Cancel Recording?",
-        "Are you sure you want to cancel? Your recording will be lost.",
-        [
-          { text: "Keep Recording", style: "cancel" },
-          {
-            text: "Cancel",
-            style: "destructive",
-            onPress: async () => {
-              if (recording) {
-                try {
-                  await recording.stopAndUnloadAsync();
-                } catch (error) {
-                  console.error("Error stopping recording:", error);
+      const shouldCancel = Platform.OS === 'web' 
+        ? window.confirm("Cancel Recording?\n\nAre you sure you want to cancel? Your recording will be lost.")
+        : false;
+
+      if (Platform.OS === 'web') {
+        if (shouldCancel) {
+          if (recording) {
+            try {
+              await recording.stopAndUnloadAsync();
+            } catch (error) {
+              console.error("Error stopping recording:", error);
+            }
+            setRecording(null);
+          }
+          setIsRecording(false);
+          setIsPaused(false);
+          setSeconds(0);
+          navigation.goBack();
+        }
+      } else {
+        Alert.alert(
+          "Cancel Recording?",
+          "Are you sure you want to cancel? Your recording will be lost.",
+          [
+            { text: "Keep Recording", style: "cancel" },
+            {
+              text: "Cancel",
+              style: "destructive",
+              onPress: async () => {
+                if (recording) {
+                  try {
+                    await recording.stopAndUnloadAsync();
+                  } catch (error) {
+                    console.error("Error stopping recording:", error);
+                  }
+                  setRecording(null);
                 }
-                setRecording(null);
-              }
-              setIsRecording(false);
-              setIsPaused(false);
-              setSeconds(0);
-              navigation.goBack();
+                setIsRecording(false);
+                setIsPaused(false);
+                setSeconds(0);
+                navigation.goBack();
+              },
             },
-          },
-        ]
-      );
+          ]
+        );
+      }
     } else {
       navigation.goBack();
     }
