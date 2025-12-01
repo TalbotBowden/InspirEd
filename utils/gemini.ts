@@ -115,6 +115,121 @@ ${transcription}`,
   }
 }
 
+export type VisitExtraction = {
+  keyPoints: string[];
+  diagnoses: string[];
+  actions: string[];
+  medicalTerms: { term: string; explanation: string }[];
+};
+
+export async function extractVisitDetails(
+  transcription: string,
+  readingLevel: number = 8
+): Promise<VisitExtraction> {
+  try {
+    const prompt = `Analyze this medical visit transcription and extract structured information. Return ONLY valid JSON with no additional text.
+
+TRANSCRIPTION:
+${transcription}
+
+Extract the following and return as JSON:
+{
+  "keyPoints": ["array of 3-5 key points from the visit"],
+  "diagnoses": ["array of any diagnoses or conditions mentioned"],
+  "actions": ["array of action items for the parent/caregiver"],
+  "medicalTerms": [{"term": "medical term", "explanation": "simple explanation at ${readingLevel}th grade level"}]
+}
+
+Guidelines:
+- keyPoints: Most important takeaways a parent should remember
+- diagnoses: Any medical conditions, diagnoses, or health status updates mentioned
+- actions: Things the parent needs to do (medications, follow-ups, monitoring, etc.)
+- medicalTerms: Any medical jargon with simple explanations appropriate for a ${readingLevel}th grade reading level
+
+If a category has no relevant information, return an empty array for that field.`;
+
+    const response = await getAI().models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
+
+    const text = response.text || "{}";
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        keyPoints: parsed.keyPoints || [],
+        diagnoses: parsed.diagnoses || [],
+        actions: parsed.actions || [],
+        medicalTerms: parsed.medicalTerms || [],
+      };
+    }
+    
+    return { keyPoints: [], diagnoses: [], actions: [], medicalTerms: [] };
+  } catch (error) {
+    console.error("Failed to extract visit details:", error);
+    return { keyPoints: [], diagnoses: [], actions: [], medicalTerms: [] };
+  }
+}
+
+export async function suggestPlannerQuestions(
+  visits: { summary?: string | null; diagnoses?: string[]; actions?: string[] }[]
+): Promise<string[]> {
+  try {
+    const recentVisits = visits.slice(0, 3);
+    const visitContext = recentVisits
+      .map((v, i) => {
+        const parts = [`Visit ${i + 1}:`];
+        if (v.summary) parts.push(`Summary: ${v.summary}`);
+        if (v.diagnoses?.length) parts.push(`Diagnoses: ${v.diagnoses.join(", ")}`);
+        if (v.actions?.length) parts.push(`Actions: ${v.actions.join(", ")}`);
+        return parts.join("\n");
+      })
+      .join("\n\n");
+
+    const prompt = `Based on these recent medical visits for a child with a chronic pulmonary condition, suggest 4-6 thoughtful questions the parent should ask at their next doctor visit.
+
+${visitContext || "No previous visit data available."}
+
+Return ONLY a JSON array of question strings, no other text. Example format:
+["Question 1?", "Question 2?"]
+
+Focus on:
+- Following up on previous findings or concerns
+- Understanding treatment progress
+- Clarifying care instructions
+- Planning for the future`;
+
+    const response = await getAI().models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
+
+    const text = response.text || "[]";
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+    
+    return [
+      "How is my child's lung function progressing?",
+      "Are there any new treatment options we should consider?",
+      "What symptoms should I watch for?",
+      "How can we improve daily care routines?",
+    ];
+  } catch (error) {
+    console.error("Failed to suggest planner questions:", error);
+    return [
+      "How is my child's lung function progressing?",
+      "Are there any new treatment options we should consider?",
+      "What symptoms should I watch for?",
+      "How can we improve daily care routines?",
+    ];
+  }
+}
+
 export async function askQuestionWithGemini(
   question: string,
   visitContext: {

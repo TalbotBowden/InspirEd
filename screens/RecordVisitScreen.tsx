@@ -15,7 +15,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
-import { generateVisitSummary } from "@/utils/openai";
+import { extractVisitDetails } from "@/utils/gemini";
 import { transcribeAndSummarizeAudio } from "@/utils/gemini";
 import { Audio } from "expo-av";
 
@@ -393,7 +393,7 @@ export default function RecordVisitScreen() {
         setTranscriptionResult(result.transcription);
         setProcessingStatus("summarizing");
         
-        const aiExtraction = await generateVisitSummary(
+        const aiExtraction = await extractVisitDetails(
           result.transcription,
           readingLevel
         );

@@ -8,7 +8,7 @@ import { Icon } from "@/components/Icon";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { useAppContext, Question } from "@/context/AppContext";
-import { suggestPlannerQuestions } from "@/utils/openai";
+import { suggestPlannerQuestions } from "@/utils/gemini";
 
 export default function PlannerScreen() {
   const { theme } = useTheme();
