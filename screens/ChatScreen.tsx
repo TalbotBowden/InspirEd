@@ -3,6 +3,7 @@ import { View, StyleSheet, TextInput, Pressable, FlatList, KeyboardAvoidingView,
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Icon } from "@/components/Icon";
+import { MarkdownText } from "@/components/MarkdownText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { useAppContext, Message } from "@/context/AppContext";
@@ -153,9 +154,15 @@ function MessageBubble({ message, isUser, theme }: { message: Message; isUser: b
           },
         ]}
       >
-        <ThemedText style={[styles.messageText, { color: isUser ? "white" : theme.text }]}>
-          {message.text}
-        </ThemedText>
+        {isUser ? (
+          <ThemedText style={[styles.messageText, { color: "white" }]}>
+            {message.text}
+          </ThemedText>
+        ) : (
+          <MarkdownText style={styles.messageText} color={theme.text}>
+            {message.text}
+          </MarkdownText>
+        )}
       </View>
     </View>
   );

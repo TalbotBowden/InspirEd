@@ -6,6 +6,7 @@ import { ScreenScrollView } from "@/components/ScreenScrollView";
 import { ScreenKeyboardAwareScrollView } from "@/components/ScreenKeyboardAwareScrollView";
 import { Button } from "@/components/Button";
 import { Icon } from "@/components/Icon";
+import { MarkdownText } from "@/components/MarkdownText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { useAppContext, Message } from "@/context/AppContext";
@@ -174,9 +175,15 @@ export default function ModuleDetailScreen() {
                     { backgroundColor: msg.isUser ? theme.primary : theme.backgroundSecondary },
                   ]}
                 >
-                  <ThemedText style={{ color: msg.isUser ? "white" : theme.text }}>
-                    {msg.text}
-                  </ThemedText>
+                  {msg.isUser ? (
+                    <ThemedText style={{ color: "white" }}>
+                      {msg.text}
+                    </ThemedText>
+                  ) : (
+                    <MarkdownText color={theme.text}>
+                      {msg.text}
+                    </MarkdownText>
+                  )}
                 </View>
               </View>
             ))}

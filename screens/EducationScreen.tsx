@@ -5,6 +5,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { ScreenScrollView } from "@/components/ScreenScrollView";
 import { Button } from "@/components/Button";
 import { Icon } from "@/components/Icon";
+import { MarkdownText } from "@/components/MarkdownText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { useAppContext, LearningModule, Message, Citation } from "@/context/AppContext";
@@ -104,9 +105,15 @@ export default function EducationScreen() {
                     },
                   ]}
                 >
-                  <ThemedText style={{ color: msg.isUser ? "white" : theme.text }}>
-                    {msg.text}
-                  </ThemedText>
+                  {msg.isUser ? (
+                    <ThemedText style={{ color: "white" }}>
+                      {msg.text}
+                    </ThemedText>
+                  ) : (
+                    <MarkdownText color={theme.text}>
+                      {msg.text}
+                    </MarkdownText>
+                  )}
                 </View>
                 {!msg.isUser && msg.citations && msg.citations.length > 0 ? (
                   <CitationSection citations={msg.citations} />
