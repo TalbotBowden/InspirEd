@@ -578,7 +578,7 @@ export default function RecordVisitScreen() {
               <ActivityIndicator size="large" color="white" />
               <ThemedText style={styles.processingTitle}>Creating your summary...</ThemedText>
               <ThemedText style={styles.processingSubtitle}>
-                Analyzing the visit and adapting to your reading level
+                Analyzing the visit and tailoring to your preferences
               </ThemedText>
             </View>
           ) : (
