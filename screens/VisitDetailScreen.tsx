@@ -5,6 +5,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { ScreenScrollView } from "@/components/ScreenScrollView";
 import { Button } from "@/components/Button";
 import { Icon } from "@/components/Icon";
+import { MarkdownText } from "@/components/MarkdownText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { useAppContext } from "@/context/AppContext";
@@ -49,7 +50,9 @@ export default function VisitDetailScreen() {
               <Icon name="document" size={24} color={theme.primary} />
               <ThemedText style={styles.cardTitle}>Visit Summary</ThemedText>
             </View>
-            <ThemedText style={styles.summaryText}>{visit.summary}</ThemedText>
+            <MarkdownText style={styles.summaryText} color={theme.text}>
+              {visit.summary}
+            </MarkdownText>
           </ThemedView>
         )}
 

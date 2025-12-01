@@ -4,6 +4,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { ScreenScrollView } from "@/components/ScreenScrollView";
 import { Icon } from "@/components/Icon";
+import { MarkdownText } from "@/components/MarkdownText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { useAppContext, Visit } from "@/context/AppContext";
@@ -275,9 +276,11 @@ function VisitCard({
       ) : (
         <>
           {visit.summary && !isExpanded && (
-            <ThemedText style={[styles.summary, { color: theme.textSecondary }]} numberOfLines={2}>
-              {visit.summary}
-            </ThemedText>
+            <View style={{ maxHeight: 44, overflow: "hidden" }}>
+              <MarkdownText style={styles.summary} color={theme.textSecondary}>
+                {visit.summary}
+              </MarkdownText>
+            </View>
           )}
           {!isExpanded && (
             <View style={styles.statusIndicator}>
@@ -325,9 +328,9 @@ function VisitCard({
 
           {visit.summary && (
             <View style={styles.fullSummaryContainer}>
-              <ThemedText style={[styles.fullSummary, { color: theme.textSecondary }]}>
+              <MarkdownText style={styles.fullSummary} color={theme.textSecondary}>
                 {visit.summary}
-              </ThemedText>
+              </MarkdownText>
             </View>
           )}
 
