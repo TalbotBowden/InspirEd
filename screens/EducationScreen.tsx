@@ -388,6 +388,7 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: "700",
     color: "white",
+    lineHeight: 56,
   },
   progressLabel: {
     fontSize: 16,
