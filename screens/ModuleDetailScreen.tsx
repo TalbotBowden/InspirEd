@@ -126,9 +126,10 @@ export default function ModuleDetailScreen() {
 
     const aiMessage: Message = {
       id: (Date.now() + 1).toString(),
-      text: response,
+      text: response.answer,
       isUser: false,
       timestamp: new Date(),
+      citations: response.citations,
     };
 
     setChatMessages((prev) => [...prev, aiMessage]);
@@ -267,7 +268,7 @@ export default function ModuleDetailScreen() {
                 <ThemedText style={styles.lessonBadgeText}>Introduction</ThemedText>
               </View>
               <ThemedText style={styles.lessonTitle}>{module.title}</ThemedText>
-              <ThemedText style={styles.lessonContent}>{lesson.introduction}</ThemedText>
+              <MarkdownText style={styles.lessonContent} color={theme.text}>{lesson.introduction}</MarkdownText>
               <View style={styles.topicsPreview}>
                 <ThemedText style={[styles.topicsLabel, { color: theme.textSecondary }]}>
                   In this lesson, you'll learn about:
@@ -286,7 +287,7 @@ export default function ModuleDetailScreen() {
                 <ThemedText style={styles.lessonBadgeText}>Summary</ThemedText>
               </View>
               <ThemedText style={styles.lessonTitle}>What You Learned</ThemedText>
-              <ThemedText style={styles.lessonContent}>{lesson.summary}</ThemedText>
+              <MarkdownText style={styles.lessonContent} color={theme.text}>{lesson.summary}</MarkdownText>
               
               <View style={[styles.tipsCard, { backgroundColor: theme.accent + "20" }]}>
                 <ThemedText style={[styles.tipsTitle, { color: theme.accent }]}>Practical Tips</ThemedText>
@@ -304,16 +305,16 @@ export default function ModuleDetailScreen() {
                 <ThemedText style={styles.lessonBadgeText}>Section {sectionIndex + 1}</ThemedText>
               </View>
               <ThemedText style={styles.lessonTitle}>{lesson.sections[sectionIndex].title}</ThemedText>
-              <ThemedText style={styles.lessonContent}>{lesson.sections[sectionIndex].content}</ThemedText>
-              {lesson.sections[sectionIndex].keyTakeaway && (
+              <MarkdownText style={styles.lessonContent} color={theme.text}>{lesson.sections[sectionIndex].content}</MarkdownText>
+              {lesson.sections[sectionIndex].keyTakeaway ? (
                 <View style={[styles.takeawayCard, { backgroundColor: theme.primary + "15", borderColor: theme.primary }]}>
                   <Icon name="sparkles" size={20} color={theme.primary} />
                   <View style={styles.takeawayContent}>
                     <ThemedText style={[styles.takeawayLabel, { color: theme.primary }]}>Key Takeaway</ThemedText>
-                    <ThemedText style={styles.takeawayText}>{lesson.sections[sectionIndex].keyTakeaway}</ThemedText>
+                    <MarkdownText style={styles.takeawayText} color={theme.text}>{lesson.sections[sectionIndex].keyTakeaway}</MarkdownText>
                   </View>
                 </View>
-              )}
+              ) : null}
             </ThemedView>
           )}
 
