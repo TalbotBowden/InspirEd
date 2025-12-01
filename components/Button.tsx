@@ -1,5 +1,5 @@
-import React, { ReactNode } from "react";
-import { StyleSheet, Pressable, ViewStyle, StyleProp } from "react-native";
+import React, { ReactNode, Children, isValidElement } from "react";
+import { StyleSheet, Pressable, ViewStyle, StyleProp, View, Text } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -7,7 +7,6 @@ import Animated, {
   WithSpringConfig,
 } from "react-native-reanimated";
 
-import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing } from "@/constants/theme";
 
@@ -53,6 +52,22 @@ export function Button({
     }
   };
 
+  const renderChildren = () => {
+    return Children.map(children, (child) => {
+      if (typeof child === "string") {
+        return (
+          <Text style={[styles.buttonText, { color: theme.buttonText }]}>
+            {child}
+          </Text>
+        );
+      }
+      if (isValidElement(child)) {
+        return child;
+      }
+      return child;
+    });
+  };
+
   return (
     <AnimatedPressable
       onPress={disabled ? undefined : onPress}
@@ -69,12 +84,9 @@ export function Button({
         animatedStyle,
       ]}
     >
-      <ThemedText
-        type="body"
-        style={[styles.buttonText, { color: theme.buttonText }]}
-      >
-        {children}
-      </ThemedText>
+      <View style={styles.contentContainer}>
+        {renderChildren()}
+      </View>
     </AnimatedPressable>
   );
 }
@@ -86,15 +98,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: Spacing.xl,
+  },
+  contentContainer: {
     flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: Spacing.sm,
   },
   buttonText: {
     fontWeight: "600",
+    fontSize: 16,
     lineHeight: 24,
     textAlign: "center",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
   },
 });
