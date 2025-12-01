@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { View, StyleSheet, Pressable, TextInput, ActivityIndicator } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { View, StyleSheet, Pressable, TextInput, ActivityIndicator, ScrollView } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { ScreenScrollView } from "@/components/ScreenScrollView";
@@ -30,6 +30,8 @@ export default function ModuleDetailScreen() {
   const [chatMessages, setChatMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [isLoadingChat, setIsLoadingChat] = useState(false);
+  
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const loadLesson = async () => {
     if (!module) return;
@@ -70,12 +72,17 @@ export default function ModuleDetailScreen() {
     }
   };
 
+  const scrollToTop = () => {
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  };
+
   const handleNextSection = () => {
     if (!lesson) return;
     
     const totalSections = lesson.sections.length + 2; // intro + sections + summary
     const newSection = currentSection + 1;
     setCurrentSection(newSection);
+    scrollToTop();
     
     const progressPercent = Math.round(((newSection + 1) / totalSections) * 100);
     if (module) {
@@ -86,6 +93,7 @@ export default function ModuleDetailScreen() {
   const handlePrevSection = () => {
     if (currentSection > 0) {
       setCurrentSection(currentSection - 1);
+      scrollToTop();
     }
   };
 
@@ -246,7 +254,7 @@ export default function ModuleDetailScreen() {
     const sectionIndex = currentSection - 1;
 
     return (
-      <ScreenScrollView>
+      <ScreenScrollView ref={scrollViewRef}>
         <View style={styles.container}>
           <View style={styles.progressHeader}>
             <View style={[styles.lessonProgressBar, { backgroundColor: theme.backgroundSecondary }]}>
