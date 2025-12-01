@@ -212,12 +212,44 @@ export async function getRAGContextWithCitations(
     return { context: '', citations: [] };
   }
   
-  const citations: Citation[] = results.map((result, index) => ({
-    id: `source-${index + 1}`,
-    sourceTitle: formatSourceName(result.chunk.source),
-    excerpt: result.chunk.text.substring(0, 150) + (result.chunk.text.length > 150 ? '...' : ''),
-    similarity: Math.round(result.similarity * 100),
-  }));
+  // Group results by source to deduplicate citations
+  const sourceMap = new Map<string, { 
+    chunks: typeof results; 
+    bestSimilarity: number;
+  }>();
+  
+  for (const result of results) {
+    const sourceName = result.chunk.source;
+    const existing = sourceMap.get(sourceName);
+    if (existing) {
+      existing.chunks.push(result);
+      existing.bestSimilarity = Math.max(existing.bestSimilarity, result.similarity);
+    } else {
+      sourceMap.set(sourceName, { 
+        chunks: [result], 
+        bestSimilarity: result.similarity 
+      });
+    }
+  }
+  
+  // Create deduplicated citations (one per unique source)
+  const citations: Citation[] = [];
+  let citationIndex = 0;
+  for (const [sourceName, data] of sourceMap.entries()) {
+    citationIndex++;
+    // Combine excerpts from multiple chunks of the same source
+    const combinedExcerpt = data.chunks
+      .slice(0, 2)
+      .map(r => r.chunk.text.substring(0, 100))
+      .join(' ... ');
+    
+    citations.push({
+      id: `source-${citationIndex}`,
+      sourceTitle: formatSourceName(sourceName),
+      excerpt: combinedExcerpt.substring(0, 200) + (combinedExcerpt.length > 200 ? '...' : ''),
+      similarity: Math.round(data.bestSimilarity * 100),
+    });
+  }
   
   const contextParts = results.map((result, index) => {
     const sourceLabel = formatSourceName(result.chunk.source);
