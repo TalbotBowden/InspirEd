@@ -122,7 +122,8 @@ export default function ChatScreen() {
           styles.inputContainer,
           {
             backgroundColor: theme.backgroundSecondary,
-            bottom: TAB_BAR_HEIGHT,
+            bottom: 0,
+            paddingBottom: TAB_BAR_HEIGHT + Spacing.md,
             borderTopColor: theme.border,
           },
           animatedInputStyle,
