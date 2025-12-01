@@ -51,7 +51,7 @@ The app adapts content complexity based on your preference:
 - Expo Go app on your mobile device (for testing)
 
 ### Environment Variables
-Create a `.env` file or add these secrets in Replit:
+Create a `.env` file:
 
 ```
 GEMINI_API_KEY=your_gemini_api_key
