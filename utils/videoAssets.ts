@@ -1,7 +1,7 @@
 import { Platform } from "react-native";
 
 const videoUrls: { [key: string]: string } = {
-  "surfactant-intro-video": "https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4",
+  "surfactant-intro-video": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
 };
 
 export function getLocalVideoSource(videoId: string): { uri: string } | null {
