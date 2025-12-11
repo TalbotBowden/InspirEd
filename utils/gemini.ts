@@ -111,8 +111,43 @@ ${transcription}`,
     if (errorStack) {
       console.error("Error stack:", errorStack);
     }
-    throw new Error(`Failed to process audio: ${errorMessage}`);
+    
+    // Parse and provide user-friendly error messages
+    const friendlyError = parseGeminiError(errorMessage);
+    throw new Error(friendlyError);
   }
+}
+
+function parseGeminiError(errorMessage: string): string {
+  const errorLower = errorMessage.toLowerCase();
+  
+  // Quota exceeded (429 error)
+  if (errorLower.includes("429") || errorLower.includes("quota") || errorLower.includes("resource_exhausted")) {
+    return "Daily limit reached. The free AI service has a limited number of requests per day. Please try again tomorrow, or contact support about upgrading to a higher limit.";
+  }
+  
+  // Service overloaded (503 error)
+  if (errorLower.includes("503") || errorLower.includes("overloaded") || errorLower.includes("unavailable")) {
+    return "The AI service is temporarily busy. Please wait a moment and try again.";
+  }
+  
+  // Network errors
+  if (errorLower.includes("network") || errorLower.includes("fetch") || errorLower.includes("timeout")) {
+    return "Connection problem. Please check your internet connection and try again.";
+  }
+  
+  // API key issues
+  if (errorLower.includes("api_key") || errorLower.includes("unauthorized") || errorLower.includes("401")) {
+    return "There's a problem with the AI service configuration. Please contact support.";
+  }
+  
+  // Audio processing issues
+  if (errorLower.includes("audio") || errorLower.includes("format") || errorLower.includes("decode")) {
+    return "Could not process the recording. The audio format may not be supported. Please try recording again.";
+  }
+  
+  // Generic fallback - don't expose raw API details
+  return "Could not process the recording. Please try again in a few moments.";
 }
 
 export type VisitExtraction = {
