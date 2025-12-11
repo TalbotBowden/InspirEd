@@ -9,15 +9,15 @@ import { Icon } from "@/components/Icon";
 import { MarkdownText } from "@/components/MarkdownText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
-import { useAppContext, Message } from "@/context/AppContext";
+import { useAppContext, Message, ModuleVideo } from "@/context/AppContext";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { generateModuleLesson, askEducationalQuestion, GeneratedLesson } from "@/utils/gemini";
 
 export default function ModuleDetailScreen() {
   const { theme } = useTheme();
-  const { learningModules, updateModuleProgress, completeModule, readingLevel } = useAppContext();
+  const { learningModules, updateModuleProgress, completeModule, readingLevel, addVideoWatchRecord, getVideoWatchProgress } = useAppContext();
   const route = useRoute<any>();
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const moduleId = route.params?.moduleId;
 
   const module = learningModules.find((m) => m.id === moduleId);
@@ -30,8 +30,26 @@ export default function ModuleDetailScreen() {
   const [chatMessages, setChatMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [isLoadingChat, setIsLoadingChat] = useState(false);
+  const [videoWatched, setVideoWatched] = useState(false);
   
   const scrollViewRef = useRef<ScrollView>(null);
+  
+  useEffect(() => {
+    if (module?.video) {
+      const progress = getVideoWatchProgress(module.video.id);
+      setVideoWatched(progress > 50);
+    }
+  }, [module?.video]);
+  
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
+      if (module?.video) {
+        const progress = getVideoWatchProgress(module.video.id);
+        setVideoWatched(progress > 50);
+      }
+    });
+    return unsubscribe;
+  }, [navigation, module?.video, getVideoWatchProgress]);
 
   const loadLesson = async () => {
     if (!module) return;
@@ -77,17 +95,17 @@ export default function ModuleDetailScreen() {
   };
 
   const handleNextSection = () => {
-    if (!lesson) return;
+    if (!lesson || !module) return;
     
-    const totalSections = lesson.sections.length + 2; // intro + sections + summary
+    const hasVideoAfterIntro = module.video?.placement === "after_intro";
+    const videoSectionOffset = hasVideoAfterIntro ? 1 : 0;
+    const totalSections = lesson.sections.length + 2 + videoSectionOffset;
     const newSection = currentSection + 1;
     setCurrentSection(newSection);
     scrollToTop();
     
     const progressPercent = Math.round(((newSection + 1) / totalSections) * 100);
-    if (module) {
-      updateModuleProgress(module.id, Math.min(progressPercent, 95));
-    }
+    updateModuleProgress(module.id, Math.min(progressPercent, 95));
   };
 
   const handlePrevSection = () => {
@@ -248,10 +266,28 @@ export default function ModuleDetailScreen() {
   }
 
   if (showLesson && lesson) {
-    const totalSections = lesson.sections.length + 2;
+    const hasVideoAfterIntro = module.video?.placement === "after_intro";
+    const videoSectionOffset = hasVideoAfterIntro ? 1 : 0;
+    const totalSections = lesson.sections.length + 2 + videoSectionOffset;
     const isIntro = currentSection === 0;
+    const isVideoSection = hasVideoAfterIntro && currentSection === 1;
     const isSummary = currentSection === totalSections - 1;
-    const sectionIndex = currentSection - 1;
+    const sectionIndex = currentSection - 1 - videoSectionOffset;
+    
+    const hasValidVideoSource = module.video?.sourceUri && module.video.sourceUri.trim() !== "";
+    
+    const handleWatchVideo = () => {
+      if (module.video && hasValidVideoSource) {
+        navigation.navigate("VideoPlayer", {
+          videoId: module.video.id,
+          title: module.video.title,
+          sourceUri: module.video.sourceUri,
+          sourceType: module.video.sourceType,
+          description: module.video.description,
+          duration: module.video.duration,
+        });
+      }
+    };
 
     return (
       <ScreenScrollView ref={scrollViewRef}>
@@ -288,6 +324,61 @@ export default function ModuleDetailScreen() {
                   </View>
                 ))}
               </View>
+            </ThemedView>
+          ) : isVideoSection && module.video ? (
+            <ThemedView style={[styles.lessonCard, { backgroundColor: theme.backgroundSecondary }]}>
+              <View style={[styles.lessonBadge, { backgroundColor: theme.accent }]}>
+                <ThemedText style={styles.lessonBadgeText}>Watch</ThemedText>
+              </View>
+              <ThemedText style={styles.lessonTitle}>{module.video.title}</ThemedText>
+              <ThemedText style={[styles.lessonContent, { color: theme.textSecondary }]}>
+                {module.video.description}
+              </ThemedText>
+              
+              {hasValidVideoSource ? (
+                <Pressable
+                  onPress={handleWatchVideo}
+                  style={[styles.videoCard, { backgroundColor: theme.primary + "10", borderColor: theme.primary }]}
+                >
+                  <View style={[styles.videoPlayButton, { backgroundColor: theme.primary }]}>
+                    <Icon name="play" size={32} color="white" />
+                  </View>
+                  <View style={styles.videoInfo}>
+                    <ThemedText style={styles.videoTitle}>{module.video.title}</ThemedText>
+                    <View style={styles.videoDuration}>
+                      <Icon name="time" size={14} color={theme.textSecondary} />
+                      <ThemedText style={[styles.videoDurationText, { color: theme.textSecondary }]}>
+                        {module.video.duration}
+                      </ThemedText>
+                    </View>
+                  </View>
+                  {videoWatched ? (
+                    <View style={[styles.watchedBadge, { backgroundColor: theme.success }]}>
+                      <Icon name="check" size={16} color="white" />
+                    </View>
+                  ) : null}
+                </Pressable>
+              ) : (
+                <View style={[styles.videoCard, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}>
+                  <View style={[styles.videoPlayButton, { backgroundColor: theme.border }]}>
+                    <Icon name="videocam-off" size={28} color={theme.textSecondary} />
+                  </View>
+                  <View style={styles.videoInfo}>
+                    <ThemedText style={[styles.videoTitle, { color: theme.textSecondary }]}>
+                      Video Not Available
+                    </ThemedText>
+                    <ThemedText style={[styles.videoDurationText, { color: theme.textSecondary }]}>
+                      This video is currently unavailable
+                    </ThemedText>
+                  </View>
+                </View>
+              )}
+              
+              <ThemedText style={[styles.videoHint, { color: theme.textSecondary }]}>
+                {hasValidVideoSource 
+                  ? "Tap to watch the video, then continue to the next section."
+                  : "You can continue to the next section without watching the video."}
+              </ThemedText>
             </ThemedView>
           ) : isSummary ? (
             <ThemedView style={[styles.lessonCard, { backgroundColor: theme.backgroundSecondary }]}>
@@ -692,6 +783,49 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     borderWidth: 1,
     gap: Spacing.sm,
+  },
+  videoCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    borderWidth: 2,
+    gap: Spacing.md,
+  },
+  videoPlayButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  videoInfo: {
+    flex: 1,
+    gap: Spacing.xs,
+  },
+  videoTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  videoDuration: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+  },
+  videoDurationText: {
+    fontSize: 13,
+  },
+  watchedBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  videoHint: {
+    fontSize: 13,
+    textAlign: "center",
+    fontStyle: "italic",
   },
   backButton: {
     flexDirection: "row",

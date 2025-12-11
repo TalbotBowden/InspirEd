@@ -62,8 +62,15 @@ The app allows users to record, pause, and stop audio, saving recordings locally
 ### Educational Content System
 Features learning modules categorized by topic and difficulty, with progress tracking. AI-generated lessons, dynamically created using the Gemini API, are adapted to the user's communication style and offer section-by-section navigation and module-specific Q&A. A separate education chat addresses broader medical questions, grounded in trusted PDF sources.
 
-### Educational Video System
-The app includes a curated video library for visual explanations of medical concepts:
+**Videos Embedded in Lessons:**
+The primary video experience is integrated directly into learning modules. Videos appear at strategic points within lessons (after_intro, after_section_N, or before_summary) with a dedicated "Watch" section in the lesson flow. This keeps parents on a guided learning path while incorporating visual content exactly when it's most relevant.
+
+- Modules can include a `video` property with placement metadata
+- VideoPlayerScreen handles both embedded module videos and standalone library videos
+- Watch progress is tracked and displayed with a checkmark badge
+
+### Educational Video Library (Secondary)
+The "Explore Videos" option provides a secondary way to browse all educational videos:
 
 **Architecture:**
 - **Google Drive Service:** `utils/googleDrive.ts` handles authentication and video fetching from a designated Drive folder

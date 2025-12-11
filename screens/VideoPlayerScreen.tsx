@@ -14,7 +14,12 @@ import { Video, ResizeMode, AVPlaybackStatus } from "expo-av";
 type VideoPlayerParams = {
   VideoPlayer: {
     videoId: string;
-    video: EducationalVideo;
+    video?: EducationalVideo;
+    title?: string;
+    sourceUri?: string;
+    sourceType?: "local" | "drive" | "url";
+    description?: string;
+    duration?: string;
   };
 };
 
@@ -25,7 +30,20 @@ export default function VideoPlayerScreen() {
   const insets = useSafeAreaInsets();
   const { addVideoWatchRecord, getVideoWatchProgress } = useAppContext();
 
-  const { video } = route.params;
+  const params = route.params;
+  const isEmbeddedVideo = !params.video && params.sourceUri;
+  const video = params.video || {
+    id: params.videoId,
+    title: params.title || "Video",
+    description: params.description || "",
+    videoUrl: params.sourceUri || "",
+    thumbnailUrl: "",
+    duration: params.duration || "",
+    category: "",
+    order: 0,
+    createdAt: new Date().toISOString(),
+  };
+  const embeddedSourceType = params.sourceType;
   const videoRef = useRef<Video>(null);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -42,15 +60,38 @@ export default function VideoPlayerScreen() {
   useEffect(() => {
     const loadVideoUrl = async () => {
       try {
-        const url = await getVideoStreamUrl(video.id);
-        setVideoUrl(url || video.videoUrl);
+        let url = "";
+        if (isEmbeddedVideo) {
+          if (embeddedSourceType === "local" || embeddedSourceType === "url") {
+            url = video.videoUrl;
+          } else if (embeddedSourceType === "drive") {
+            url = await getVideoStreamUrl(video.id) || video.videoUrl;
+          } else {
+            url = video.videoUrl;
+          }
+        } else {
+          url = await getVideoStreamUrl(video.id) || video.videoUrl;
+        }
+        
+        if (!url || url.trim() === "") {
+          setError("Video source is not available. Please try again later.");
+          setIsLoading(false);
+          return;
+        }
+        
+        setVideoUrl(url);
       } catch (err) {
         console.error("Error getting video URL:", err);
-        setVideoUrl(video.videoUrl);
+        if (video.videoUrl && video.videoUrl.trim() !== "") {
+          setVideoUrl(video.videoUrl);
+        } else {
+          setError("Unable to load video. Please try again later.");
+          setIsLoading(false);
+        }
       }
     };
     loadVideoUrl();
-  }, [video.id, video.videoUrl]);
+  }, [video.id, video.videoUrl, isEmbeddedVideo, embeddedSourceType]);
 
   const saveProgress = useCallback(
     (currentPosition: number, totalDuration: number) => {

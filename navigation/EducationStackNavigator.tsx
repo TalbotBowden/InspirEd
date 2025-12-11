@@ -11,11 +11,20 @@ import { Icon } from "@/components/Icon";
 import { Spacing } from "@/constants/theme";
 import { EducationalVideo } from "@/utils/googleDrive";
 
+export type EmbeddedVideoParams = {
+  videoId: string;
+  title: string;
+  sourceUri: string;
+  sourceType: "local" | "drive" | "url";
+  description?: string;
+  duration?: string;
+};
+
 export type EducationStackParamList = {
   Education: undefined;
   ModuleDetail: { moduleId: string };
   VideoLibrary: undefined;
-  VideoPlayer: { videoId: string; video: EducationalVideo };
+  VideoPlayer: { videoId: string; video: EducationalVideo } | EmbeddedVideoParams;
 };
 
 const Stack = createNativeStackNavigator<EducationStackParamList>();
@@ -52,7 +61,7 @@ export default function EducationStackNavigator() {
         name="VideoLibrary"
         component={VideoLibraryScreen}
         options={({ navigation }) => ({
-          title: "Educational Videos",
+          title: "Explore Videos",
           headerLeft: () => (
             <Pressable
               onPress={() => navigation.goBack()}

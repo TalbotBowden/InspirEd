@@ -45,6 +45,17 @@ export type PDFSource = {
   status: "processing" | "ready";
 };
 
+export type ModuleVideo = {
+  id: string;
+  title: string;
+  description: string;
+  duration: string;
+  sourceType: "local" | "drive" | "url";
+  sourceUri: string;
+  thumbnailUri?: string;
+  placement: "before_lesson" | "after_intro" | "after_lesson";
+};
+
 export type LearningModule = {
   id: string;
   title: string;
@@ -55,6 +66,7 @@ export type LearningModule = {
   progress: number;
   completed: boolean;
   topics: string[];
+  video?: ModuleVideo;
 };
 
 export type VideoWatchRecord = {
@@ -151,6 +163,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [videoWatchHistory, setVideoWatchHistory] = useState<VideoWatchRecord[]>([]);
   const [cachedVideos, setCachedVideosState] = useState<CachedVideo[]>([]);
   const [learningModules, setLearningModules] = useState<LearningModule[]>([
+    {
+      id: "surfactant-101",
+      title: "Understanding Pulmonary Surfactant",
+      category: "Fundamentals",
+      description: "Learn what surfactant is, how it works, and why it's essential for breathing.",
+      duration: "20 min",
+      difficulty: "Beginner",
+      progress: 0,
+      completed: false,
+      topics: ["Surfactant", "Alveoli", "Type II Cells", "Surface Tension", "Breathing"],
+      video: {
+        id: "surfactant-intro-video",
+        title: "Your Lungs' Secret Helper",
+        description: "A visual guide to understanding how surfactant keeps your lungs working smoothly.",
+        duration: "3 min",
+        sourceType: "url",
+        sourceUri: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+        placement: "after_intro",
+      },
+    },
     {
       id: "1",
       title: "Understanding Pulmonary Function Tests",

@@ -179,20 +179,22 @@ export default function EducationScreen() {
 
         <View style={styles.actionButtons}>
           <Button
-            onPress={() => navigation.navigate("VideoLibrary")}
-            style={{ flex: 1 }}
-          >
-            <Icon name="videocam" size={20} color="white" />
-            Watch Videos
-          </Button>
-
-          <Button
             onPress={() => setShowChat(true)}
-            style={{ backgroundColor: theme.accent, flex: 1 }}
+            style={{ flex: 1 }}
           >
             <Icon name="chat" size={20} color="white" />
             Ask AI
           </Button>
+
+          <Pressable
+            onPress={() => navigation.navigate("VideoLibrary")}
+            style={[styles.exploreButton, { borderColor: theme.primary }]}
+          >
+            <Icon name="videocam" size={18} color={theme.primary} />
+            <ThemedText style={{ color: theme.primary, fontWeight: "600" }}>
+              Explore Videos
+            </ThemedText>
+          </Pressable>
         </View>
 
         {categories.map((category) => {
@@ -368,6 +370,18 @@ const styles = StyleSheet.create({
   actionButtons: {
     flexDirection: "row",
     gap: Spacing.md,
+    alignItems: "center",
+  },
+  exploreButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    borderWidth: 2,
   },
   progressCard: {
     padding: Spacing.xl,
