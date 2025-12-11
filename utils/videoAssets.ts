@@ -14,8 +14,8 @@ import { Platform } from "react-native";
  * For now, placeholder videos are used so the feature works during development.
  */
 const videoUrls: { [key: string]: string } = {
-  // Replace this URL with your actual "Your Lungs' Secret Helper" video when hosted
-  "surfactant-intro-video": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+  // Your Lungs' Secret Helper video from Google Drive
+  "surfactant-intro-video": "https://drive.google.com/uc?export=download&id=1XXlILsl-askIsK0IJaLbNRlhRsjXIZOS",
 };
 
 export function getLocalVideoSource(videoId: string): { uri: string } | null {
