@@ -326,6 +326,36 @@ export interface GeneratedLesson {
   practicalTips: string[];
 }
 
+async function callGeminiWithRetry(
+  prompt: string,
+  maxRetries: number = 3
+): Promise<string> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await getAI().models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [prompt],
+      });
+      return response.text || "";
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      const errorStr = String(error);
+      
+      if (errorStr.includes("503") || errorStr.includes("overloaded") || errorStr.includes("UNAVAILABLE")) {
+        const delay = Math.pow(2, attempt) * 1000;
+        console.log(`[Gemini] API overloaded, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
+  
+  throw lastError || new Error("Failed after retries");
+}
+
 export async function generateModuleLesson(
   moduleTitle: string,
   moduleDescription: string,
@@ -334,7 +364,6 @@ export async function generateModuleLesson(
   readingLevel: number = 8
 ): Promise<GeneratedLesson> {
   try {
-    // Load knowledge base and get relevant context for this topic
     await loadKnowledgeBase();
     const topicQuery = `${moduleTitle} ${topics.join(" ")} pulmonary children`;
     const ragContext = await getRAGContext(topicQuery, 3);
@@ -376,14 +405,8 @@ Generate the lesson in the following JSON format (respond with ONLY valid JSON, 
 
 Create 3-4 sections covering the main topics. Each section should be informative but concise.`;
 
-    const response = await getAI().models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [prompt],
-    });
-
-    const text = response.text || "";
+    const text = await callGeminiWithRetry(prompt);
     
-    // Try to parse the JSON response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error("No valid JSON found in response");
